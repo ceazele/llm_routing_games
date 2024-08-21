@@ -2,8 +2,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # Load the data
-no_bridge_df = pd.read_csv('routes_no_bridge_3_3.csv')
-with_bridge_df = pd.read_csv('routes_with_bridge_3_3.csv')
+no_bridge_df = pd.read_csv('COT_ALT_ROUTES_10_18/routes_10_18/routes_no_bridge_10_18.csv')
+with_bridge_df = pd.read_csv('COT_ALT_ROUTES_10_18/routes_10_18/routes_with_bridge_10_18.csv')
 
 # Plot of the experiment without the bridge
 no_bridge_routes = no_bridge_df.groupby(['Round', 'Route']).size().unstack().fillna(0)
