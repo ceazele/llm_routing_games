@@ -40,7 +40,7 @@ class Agent:
         # Initialize the model and bind the tools
         calculate_payoff = create_payoff_tool(self.num_agents, self.network)
 
-        model = ChatOpenAI(model="gpt-4o-2024-05-13", temperature=1)
+        model = ChatOpenAI(model="gpt-4o-2024-08-06", temperature=1)
         tools = [calculate_payoff]
         self.tools = tools
         return model.bind_tools(tools)

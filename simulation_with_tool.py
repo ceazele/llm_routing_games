@@ -1,6 +1,7 @@
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.output_parsers import PydanticOutputParser
+from langchain_core.chat_history import InMemoryChatMessageHistory
 from typing import List, Optional
 import json
 import os
@@ -23,6 +24,27 @@ class Route(BaseModel):
 
 # Set up a parser
 parser = PydanticOutputParser(pydantic_object=Route)
+
+# Store for chat histories
+chat_histories = {}
+
+def get_session_history(session_id: str) -> InMemoryChatMessageHistory:
+    if session_id not in chat_histories:
+        chat_histories[session_id] = InMemoryChatMessageHistory()
+    return chat_histories[session_id]
+
+def save_session_history(session_id: str):
+    history = chat_histories.get(session_id, None)
+    if history:
+        with open(f"{session_id}_history.txt", "w", encoding="utf-8") as file:
+            for message in history.messages:
+                if isinstance(message, HumanMessage):
+                    file.write(f"Human: {message.content}\n\n")
+                elif isinstance(message, SystemMessage):
+                    file.write(f"System: {message.content}\n\n")
+                elif isinstance(message, AIMessage):
+                    file.write(f"AI: {message.content}\n\n")
+
 
 # Custom parser
 def extract_json(message: AIMessage) -> List[dict]:
@@ -135,10 +157,8 @@ def generate_few_shot_examples(num_agents, routes, network: TrafficNetwork):
 
 
 # Define the system message generator
-def generate_system_message(agent_id, num_rounds, num_agents, num_routes, str_routes, has_bridge, demographics, description):
-    agent_id = int(agent_id)
+def generate_system_message(num_rounds, num_agents, num_routes, str_routes, has_bridge, description):
     instructions = f"""
-You're {demographics[agent_id]['name']}, a {demographics[agent_id]['age']}-year-old {demographics[agent_id]['occupation']}.
 You will be participating in an experiment on route selection in traffic networks.
 During this experiment you'll be asked to make many decisions about route selection in a traffic network game.
 Your payoff will depend on the decisions you make as well as the decisions made by the other participants.
@@ -188,31 +208,41 @@ When calling the tool, remember to provide both your chosen route AND the route 
 
 
 # Update the prompt_route function to use the Agent class
-def prompt_route(agent, examples, num_rounds, num_routes, demographics, description, avail_routes, prev_routes, cost):
+def prompt_route(agent, examples, num_rounds, num_routes, description, avail_routes, prev_routes, cost):
+    session_id = agent.thread_id
+    history = get_session_history(session_id)
 
-    # Prepare the initial message if this is the first round
+    # Prepare initial messages
     if prev_routes is None and cost is None:
-        system_message = generate_system_message(agent.thread_id, num_rounds, agent.num_agents, num_routes, avail_routes, True, demographics, description)
+        system_message = generate_system_message(num_rounds, agent.num_agents, num_routes, avail_routes, True, description)
         messages = [SystemMessage(content=system_message)]
         messages.extend(examples)
     else:
-        # Report only the actual cost the player incurred
         message_content = f"Last round, the number of players on each route was: {prev_routes}\n" \
                           f"Your payoff was {400 - cost}"
         messages = [HumanMessage(content=message_content)]
 
     format_instructions = parser.get_format_instructions()
     messages.append(HumanMessage(content=f"The available routes are: {avail_routes}\nThink step-by-step before making your decision."))
-    messages.append(HumanMessage(content=format_instructions)) # Try using a SystemMessage also
+    messages.append(HumanMessage(content=format_instructions))
 
-    # Invoke the agent's workflow with the prepared messages
+    # Record initial messages to history
+    for msg in messages:
+        history.add_message(msg)
+
+    # Invoke the agent's workflow
     response = agent.call({"messages": messages})
+    
+    # Capture the AI response and save to history
+    ai_message = AIMessage(content=response["messages"][-1].content)
+    history.add_message(ai_message)
+
     return response
 
 
 
 # Simulation function updated to use the TrafficNetwork class
-def run_simulation(has_bridge, num_rounds, num_agents, demographics, filename):
+def run_simulation(has_bridge, num_rounds, num_agents, filename):
     with open(filename, mode='w', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(["Round", "Agent", "Route", "Cost"])
@@ -234,9 +264,9 @@ def run_simulation(has_bridge, num_rounds, num_agents, demographics, filename):
                 description = network.describe_graph()
                 examples = generate_few_shot_examples(num_agents, str_routes, network)
                 if round_num == 1:
-                    response = prompt_route(agent, examples, num_rounds, len(str_routes), demographics, description, str_routes, None, None)
+                    response = prompt_route(agent, examples, num_rounds, len(str_routes), description, str_routes, None, None)
                 else:
-                    response = prompt_route(agent, examples, num_rounds, len(str_routes), demographics, description, str_routes, prev_routes, prev_costs[session_id])
+                    response = prompt_route(agent, examples, num_rounds, len(str_routes), description, str_routes, prev_routes, prev_costs[session_id])
 
                 # parsed_response = extract_json(response)
                 ai_message = response["messages"][-1].content
@@ -256,33 +286,12 @@ def run_simulation(has_bridge, num_rounds, num_agents, demographics, filename):
                 prev_routes[chosen_route] += 1
 
             network.reset_player_counts()
-
-        # for agent in agents:
-        #     save_session_history(agent.thread_id)
+        
+        # Save histories for each agent after simulation
+        for agent in agents:
+            save_session_history(agent.thread_id)
 
 # Running the simulation
 print("Starting simulations...")
-
-demographics = {
-    0: {"name": "John Smith", "age": 40, "occupation": "teacher"},
-    1: {"name": "Jane Doe", "age": 35, "occupation": "software developer"},
-    2: {"name": "Michael Brown", "age": 45, "occupation": "doctor"},
-    3: {"name": "Emily White", "age": 30, "occupation": "nurse"},
-    4: {"name": "David Wilson", "age": 50, "occupation": "lawyer"},
-    5: {"name": "Laura Green", "age": 28, "occupation": "engineer"},
-    6: {"name": "James Taylor", "age": 55, "occupation": "architect"},
-    7: {"name": "Sarah Miller", "age": 33, "occupation": "data scientist"},
-    8: {"name": "Robert Davis", "age": 42, "occupation": "bartender"},
-    9: {"name": "Linda Martinez", "age": 29, "occupation": "sales representative"},
-    10: {"name": "William Anderson", "age": 37, "occupation": "electrician"},
-    11: {"name": "Karen Thomas", "age": 41, "occupation": "accountant"},
-    12: {"name": "Christopher Jackson", "age": 38, "occupation": "journalist"},
-    13: {"name": "Patricia Lee", "age": 32, "occupation": "photographer"},
-    14: {"name": "Daniel Harris", "age": 43, "occupation": "graphic designer"},
-    15: {"name": "Barbara Clark", "age": 36, "occupation": "chef"},
-    16: {"name": "Matthew Lewis", "age": 31, "occupation": "construction worker"},
-    17: {"name": "Jessica Young", "age": 27, "occupation": "librarian"}
-}
-
-run_simulation(True, 10, 18, demographics, 'LR_10_18_with_bridge.csv')
+run_simulation(False, 3, 3, 'LR_10_18_no_bridge.csv')
 print("Simulations completed and routes saved")

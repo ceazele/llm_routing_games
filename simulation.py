@@ -23,7 +23,7 @@ os.environ["LANGCHAIN_PROJECT"] = "bluesky"
 os.environ["OPENAI_API_KEY"] = "sk-proj-2YIRzXSkGvD5mXF5KSwST3BlbkFJ32aEm9aV3nrL6gFGCr97"
 
 
-model = ChatOpenAI(model="gpt-4o-2024-05-13", temperature=1)
+model = ChatOpenAI(model="gpt-4o-2024-08-06", temperature=1)
 
 from langchain_core.chat_history import (
     BaseChatMessageHistory,
@@ -48,7 +48,7 @@ def add_system_message_to_history(session_id: str, system_message: str):
 def save_session_history(session_id: str):
     history = store.get(session_id, None)
     if history:
-        with open(f"session_{session_id}_history.txt", "w", encoding="utf-8") as file:
+        with open(f"{session_id}_history.txt", "w", encoding="utf-8") as file:
             for message in history.messages:
                 if isinstance(message, HumanMessage):
                     file.write(f"Human: {message.content}\n\n")
@@ -102,10 +102,8 @@ class Route(BaseModel):
 parser = PydanticOutputParser(pydantic_object=Route)
 
 
-def generate_system_message(agent_id, num_rounds, num_agents, num_routes, str_routes, has_bridge, demographics, description):
-# Imagine you are an incredibly rational economics professor.
+def generate_system_message(num_rounds, num_agents, num_routes, str_routes, has_bridge, description):
     instructions = f"""
-You're {demographics[agent_id]['name']}, a {demographics[agent_id]['age']}-year-old {demographics[agent_id]['occupation']}.
 You will be participating in an experiment on route selection in traffic networks.
 During this experiment you'll be asked to make many decisions about route selection in a traffic network game.
 Your payoff will depend on the decisions you make as well as the decisions made by the other participants.
@@ -162,7 +160,7 @@ prompt = ChatPromptTemplate.from_messages(
 chain = prompt | model
 
 
-def prompt_route(session_id, num_rounds, num_agents, num_routes, demographics, description, avail_routes, has_bridge, prev_routes, cost):
+def prompt_route(session_id, num_rounds, num_agents, num_routes, description, avail_routes, has_bridge, prev_routes, cost):
     with_message_history = RunnableWithMessageHistory(
         chain,
         get_session_history,
@@ -176,7 +174,7 @@ def prompt_route(session_id, num_rounds, num_agents, num_routes, demographics, d
 
     messages = []
     if prev_routes is None and cost is None:
-        system_message = generate_system_message(session_id, num_rounds, num_agents, num_routes, avail_routes, has_bridge, demographics, description)
+        system_message = generate_system_message(num_rounds, num_agents, num_routes, avail_routes, has_bridge, description)
         messages.append(SystemMessage(system_message))
     else:
         # Report only the actual cost the player incurred
@@ -188,7 +186,7 @@ def prompt_route(session_id, num_rounds, num_agents, num_routes, demographics, d
     messages.append(HumanMessage(f"The available routes are: {avail_routes}\n{format_instructions}\nThink step-by-step before making your decision."))
 
     response = parsed_chain.invoke(
-        {"messages": messages, "num_agents": num_agents, "num_routes": num_routes, "description": description, "name": demographics[session_id]["name"], "age": demographics[session_id]["age"], "occupation": demographics[session_id]["occupation"]},
+        {"messages": messages, "num_agents": num_agents, "num_routes": num_routes, "description": description},
         config=config,
     )
 
@@ -283,7 +281,7 @@ def get_avail_routes(G):
 
 
 # Run the simulation for a specific network with num_agents agents and num_rounds rounds
-def run_simulation(has_bridge, num_rounds, num_agents, demographics, filename):
+def run_simulation(has_bridge, num_rounds, num_agents, filename):
     with open(filename, mode='w', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(["Round", "Agent", "Route", "Cost"])
@@ -293,7 +291,6 @@ def run_simulation(has_bridge, num_rounds, num_agents, demographics, filename):
 
         prev_costs = [{} for _ in range(num_agents)]
         agent_routes = [0] * num_agents
-        # segment_counts = {}
 
         str_routes = get_avail_routes(G)
         prev_routes = {route: 0 for route in str_routes}
@@ -304,9 +301,9 @@ def run_simulation(has_bridge, num_rounds, num_agents, demographics, filename):
             for session_id in range(0, num_agents):
                 description = describe_graph(G)
                 if round_num == 1:
-                    decision = prompt_route(session_id, num_rounds, num_agents, len(str_routes), demographics, description, str_routes, has_bridge, None, None)
+                    decision = prompt_route(session_id, num_rounds, num_agents, len(str_routes), description, str_routes, has_bridge, None, None)
                 else:
-                    decision = prompt_route(session_id, num_rounds, num_agents, len(str_routes), demographics, description, str_routes, has_bridge, prev_routes, prev_costs[session_id])
+                    decision = prompt_route(session_id, num_rounds, num_agents, len(str_routes), description, str_routes, has_bridge, prev_routes, prev_costs[session_id])
 
                 chosen_route = decision.route
                 agent_routes[session_id] = chosen_route
@@ -322,7 +319,6 @@ def run_simulation(has_bridge, num_rounds, num_agents, demographics, filename):
                 prev_costs[session_id] = cost
                 prev_routes[chosen_route] += 1
 
-            # segment_counts = {f"{u}-{v}": data["players"] for u, v, data in G.edges(data=True)}
             reset_player_counts(G)
 
         for session_id in range(0, num_agents):
@@ -331,29 +327,5 @@ def run_simulation(has_bridge, num_rounds, num_agents, demographics, filename):
 
 
 print("Starting simulations...")
-
-demographics = {
-    0: {"name": "John Smith", "age": 40, "occupation": "teacher"},
-    1: {"name": "Jane Doe", "age": 35, "occupation": "software developer"},
-    2: {"name": "Michael Brown", "age": 45, "occupation": "doctor"},
-    3: {"name": "Emily White", "age": 30, "occupation": "nurse"},
-    4: {"name": "David Wilson", "age": 50, "occupation": "lawyer"},
-    5: {"name": "Laura Green", "age": 28, "occupation": "engineer"},
-    6: {"name": "James Taylor", "age": 55, "occupation": "architect"},
-    7: {"name": "Sarah Miller", "age": 33, "occupation": "data scientist"},
-    8: {"name": "Robert Davis", "age": 42, "occupation": "bartender"},
-    9: {"name": "Linda Martinez", "age": 29, "occupation": "sales representative"},
-    10: {"name": "William Anderson", "age": 37, "occupation": "electrician"},
-    11: {"name": "Karen Thomas", "age": 41, "occupation": "accountant"},
-    12: {"name": "Christopher Jackson", "age": 38, "occupation": "journalist"},
-    13: {"name": "Patricia Lee", "age": 32, "occupation": "photographer"},
-    14: {"name": "Daniel Harris", "age": 43, "occupation": "graphic designer"},
-    15: {"name": "Barbara Clark", "age": 36, "occupation": "chef"},
-    16: {"name": "Matthew Lewis", "age": 31, "occupation": "construction worker"},
-    17: {"name": "Jessica Young", "age": 27, "occupation": "librarian"}
-}
-
-
-
-run_simulation(False, 2, 10, demographics, 'test.csv')
+run_simulation(False, 40, 18, '40_18_1A_base.csv')
 print("Simulations completed and routes saved")
