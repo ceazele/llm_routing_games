@@ -2,15 +2,15 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # Load the data
-no_bridge_df = pd.read_csv('COT_ALT_ROUTES_10_18/routes_10_18/routes_no_bridge_10_18.csv')
-with_bridge_df = pd.read_csv('COT_ALT_ROUTES_10_18/routes_10_18/routes_with_bridge_10_18.csv')
+no_bridge_df = pd.read_csv('LR_10_18_no_bridge.csv')
+with_bridge_df = pd.read_csv('LR_10_18_with_bridge.csv')
 
 # Plot of the experiment without the bridge
 no_bridge_routes = no_bridge_df.groupby(['Round', 'Route']).size().unstack().fillna(0)
 
 plt.figure(figsize=(12, 6))
-plt.plot(no_bridge_routes.index, no_bridge_routes['O-A-D'], marker='o', label='OAD')
-plt.plot(no_bridge_routes.index, no_bridge_routes['O-B-D'], marker='o', label='OBD')
+plt.plot(no_bridge_routes.index, no_bridge_routes['O-L-D'], marker='o', label='OLD')
+plt.plot(no_bridge_routes.index, no_bridge_routes['O-R-D'], marker='o', label='ORD')
 plt.xlabel('Round Number')
 plt.ylabel('Number of Subjects')
 plt.title('Number of Subjects per Route (No Bridge)')
@@ -22,9 +22,9 @@ plt.show()
 with_bridge_routes = with_bridge_df.groupby(['Round', 'Route']).size().unstack().fillna(0)
 
 plt.figure(figsize=(12, 6))
-plt.plot(with_bridge_routes.index, with_bridge_routes['O-A-D'], marker='o', label='OAD')
-plt.plot(with_bridge_routes.index, with_bridge_routes['O-B-D'], marker='o', label='OBD')
-plt.plot(with_bridge_routes.index, with_bridge_routes['O-A-B-D'], marker='o', label='OABD')
+plt.plot(with_bridge_routes.index, with_bridge_routes['O-L-D'], marker='o', label='OLD')
+plt.plot(with_bridge_routes.index, with_bridge_routes['O-R-D'], marker='o', label='ORD')
+plt.plot(with_bridge_routes.index, with_bridge_routes['O-L-R-D'], marker='o', label='OLRD')
 plt.xlabel('Round Number')
 plt.ylabel('Number of Subjects')
 plt.title('Number of Subjects per Route (With Bridge)')

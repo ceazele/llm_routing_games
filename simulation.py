@@ -69,7 +69,7 @@ class PayoffCalculator:
         route_distribution (dict): A dictionary where keys are route names and values are the number of agents on that route.
         chosen_route (str): The route to calculate the payoff of.
         """
-        
+         
         # Check if the chosen route has at least one player
         if chosen_route not in route_distribution or route_distribution[chosen_route] < 1:
             raise ValueError(f"The chosen route '{chosen_route}' must have at least one player.")
@@ -80,12 +80,12 @@ class PayoffCalculator:
             raise ValueError(f"Total number of agents {total_agents} does not equal num_agents {self.num_agents}.")
 
         # Calculate the cost for the chosen route based on the distribution
-        if chosen_route == "O-A-D":
-            cost = 10 * route_distribution['O-A'] + 210
-        elif chosen_route == "O-B-D":
-            cost = 210 + 10 * route_distribution['B-D']
-        elif chosen_route == "O-A-B-D":
-            cost = 10 * route_distribution['O-A'] + 10 * route_distribution['B-D']
+        if chosen_route == "O-L-D":
+            cost = 10 * route_distribution['O-L'] + 210
+        elif chosen_route == "O-R-D":
+            cost = 210 + 10 * route_distribution['R-D']
+        elif chosen_route == "O-L-R-D":
+            cost = 10 * route_distribution['O-L'] + 10 * route_distribution['R-D']
         else:
             raise ValueError(f"Unknown route: {chosen_route}")
 
@@ -120,31 +120,32 @@ There are {num_routes} alternative routes and they are denoted by {str_routes}.
 
 Travel is always costly in terms of the time needed to complete a segment of the road, tolls, fuel etc.
 The travel costs are written near each segment of the route you choose.
-For example, if you choose route O-A-D, you will be charged a total cost of 10X + 210 where X indicates the number of participants who choose segment O-A to travel from O to A plus a fixed cost of 210 for traveling on segment A-D.
-Similarly, if you choose route O-B-D, you will be charged a total travel cost of 210 + 10Y, where Y indicates the number of participants who choose the segment B-D to drive from O to D.
-Please note that the cost charged for segments O-A and B-D depends on the number of drivers choosing them.
-In contrast, the cost charged for traveling on segments A-D and O-B is fixed at 210 and does not depend on the number of drivers choosing them.
+For example, if you choose route O-L-D, you will be charged a total cost of 10X + 210 where X indicates the number of participants who choose segment O-L to travel from O to L plus a fixed cost of 210 for traveling on segment L-D.
+Similarly, if you choose route O-R-D, you will be charged a total travel cost of 210 + 10Y, where Y indicates the number of participants who choose the segment R-D to drive from O to D.
+Please note that the cost charged for segments O-L and R-D depends on the number of drivers choosing them.
+In contrast, the cost charged for traveling on segments L-D and O-R is fixed at 210 and does not depend on the number of drivers choosing them.
 All the drivers make their route choices independently of one another and leave point O at the same time.
 """
     
     if not has_bridge:
         example = f"""
 Example.
-If you happen to be the only driver who chooses route O-A-D, and all other 17 drivers choose route O-B-D, then your travel cost from point O to point D is equal to (10 X 1) + 210 = 220.
-If, on another round, you and 2 more drivers choose route O-B-D and 15 other drivers choose route O-A-D, then your travel cost for that round will be 210 + (10 X 3) = 240.
+If you happen to be the only driver who chooses route O-L-D, and all other 17 drivers choose route O-R-D, then your travel cost from point O to point D is equal to (10 X 1) + 210 = 220.
+If, on another round, you and 2 more drivers choose route O-R-D and 15 other drivers choose route O-L-D, then your travel cost for that round will be 210 + (10 X 3) = 240.
 """
     else:
         example = f"""
 Example.
-Supposing that you choose route O-A-B-D, 3 other drivers choose route O-A-D, and 14 additional drivers choose route O-B-D.
+Supposing that you choose route O-L-R-D, 3 other drivers choose route O-L-D, and 14 additional drivers choose route O-R-D.
 Then, your total travel cost for that period is equal to (10 X 4) + 0 + (10 X 15) = 190.
-Note that in this example, 4 drivers (including you) traveled on the segment O-A and 15 drivers (again, including you) traveled the segment B-D to go from O to D.
-Each of the 3 drivers choosing route O-A-D will be charged a travel cost of (10 X 4) + (210) = 250, and each of the 14 drivers choosing the route O-B-D will be charged a travel cost of (210) + (10 X 15) = 360.
+Note that in this example, 4 drivers (including you) traveled on the segment O-L and 15 drivers (again, including you) traveled the segment R-D to go from O to D.
+Each of the 3 drivers choosing route O-L-D will be charged a travel cost of (10 X 4) + (210) = 250, and each of the 14 drivers choosing the route O-R-D will be charged a travel cost of (210) + (10 X 15) = 360.
 """
     instructions += example
     instructions += f"""
 At the beginning of each round, you will receive an endowment of 400 points.
 Your payoff for each round will be determined by subtracting your travel cost from your endowment.
+Your goal is to maximize your payoff (likewise minimize your cost).
 At the end of each round, you will be informed of the number of drivers who chose each route and your payoff for that round. 
 All {num_rounds} rounds have exactly the same structure.
 """
@@ -218,15 +219,15 @@ def create_network(has_bridge):
     G = nx.DiGraph()
 
     # Add nodes
-    G.add_nodes_from(['O', 'A', 'B', 'D'])
+    G.add_nodes_from(['O', 'L', 'R', 'D'])
 
     # Add edges with cost functions as attributes
-    G.add_edge('O', 'A', cost_func=cost_OA, cost_formula="10 * X", players=0)
-    G.add_edge('B', 'D', cost_func=cost_BD, cost_formula="10 * X", players=0)
-    G.add_edge('A', 'D', cost_func=cost_AD, cost_formula="210", players=0)
-    G.add_edge('O', 'B', cost_func=cost_OB, cost_formula="210", players=0)
+    G.add_edge('O', 'L', cost_func=cost_OA, cost_formula="10 * X", players=0)
+    G.add_edge('R', 'D', cost_func=cost_BD, cost_formula="10 * X", players=0)
+    G.add_edge('L', 'D', cost_func=cost_AD, cost_formula="210", players=0)
+    G.add_edge('O', 'R', cost_func=cost_OB, cost_formula="210", players=0)
     if has_bridge:
-        G.add_edge('A', 'B', cost_func=cost_AB, cost_formula="0", players=0)
+        G.add_edge('L', 'R', cost_func=cost_AB, cost_formula="0", players=0)
 
     return G
 
@@ -354,5 +355,5 @@ demographics = {
 
 
 
-run_simulation(True, 3, 3, demographics, 'routes_with_bridge_10_18.csv')
+run_simulation(False, 2, 10, demographics, 'test.csv')
 print("Simulations completed and routes saved")

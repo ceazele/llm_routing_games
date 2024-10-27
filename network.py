@@ -10,15 +10,15 @@ class TrafficNetwork:
         G = nx.DiGraph()
 
         # Add nodes
-        G.add_nodes_from(['O', 'A', 'B', 'D'])
+        G.add_nodes_from(['O', 'L', 'R', 'D'])
 
         # Add edges with cost functions as attributes
-        G.add_edge('O', 'A', cost_func=self.cost_OA, cost_formula="10 * X", players=0)
-        G.add_edge('B', 'D', cost_func=self.cost_BD, cost_formula="10 * X", players=0)
-        G.add_edge('A', 'D', cost_func=self.cost_AD, cost_formula="210", players=0)
-        G.add_edge('O', 'B', cost_func=self.cost_OB, cost_formula="210", players=0)
+        G.add_edge('O', 'L', cost_func=self.cost_OA, cost_formula="10 * X", players=0)
+        G.add_edge('R', 'D', cost_func=self.cost_BD, cost_formula="10 * X", players=0)
+        G.add_edge('L', 'D', cost_func=self.cost_AD, cost_formula="210", players=0)
+        G.add_edge('O', 'R', cost_func=self.cost_OB, cost_formula="210", players=0)
         if has_bridge:
-            G.add_edge('A', 'B', cost_func=self.cost_AB, cost_formula="0", players=0)
+            G.add_edge('L', 'R', cost_func=self.cost_AB, cost_formula="0", players=0)
 
         return G
 

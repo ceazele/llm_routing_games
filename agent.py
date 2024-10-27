@@ -8,7 +8,7 @@ from langchain_core.messages import BaseMessage
 from langgraph.checkpoint.memory import MemorySaver
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.tools import tool
-from payoff import create_payoff_func
+from payoff import create_payoff_tool
 from langchain_openai import ChatOpenAI
 from network import TrafficNetwork
 import os
@@ -38,7 +38,7 @@ class Agent:
 
     def _initialize_model(self):
         # Initialize the model and bind the tools
-        calculate_payoff = create_payoff_func(self.num_agents, self.network)
+        calculate_payoff = create_payoff_tool(self.num_agents, self.network)
 
         model = ChatOpenAI(model="gpt-4o-2024-05-13", temperature=1)
         tools = [calculate_payoff]
