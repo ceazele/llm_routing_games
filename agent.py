@@ -30,7 +30,7 @@ class Agent:
         self.network = network
         self.tools = []
         self.model = self._initialize_model()
-        self.memory = MemorySaver()
+        # self.memory = MemorySaver()
         self.runnable = None
 
         # Create the workflow for this agent
@@ -85,7 +85,7 @@ class Agent:
         workflow.add_edge("action", "agent")
 
         # Compile the workflow
-        return workflow.compile(checkpointer=self.memory)
+        return workflow.compile() # checkpointer=self.memory
 
     def call(self, inputs):
         config = {"configurable": {"thread_id": self.thread_id}}

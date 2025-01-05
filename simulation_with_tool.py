@@ -1,12 +1,11 @@
-from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
-from langchain_core.pydantic_v1 import BaseModel, Field
-from langchain_core.output_parsers import PydanticOutputParser
-from langchain_core.chat_history import InMemoryChatMessageHistory
-from typing import List, Optional
-import json
 import os
 import re
 import csv
+import json
+from typing import List
+from langchain_core.messages import HumanMessage, SystemMessage, AIMessage, ToolMessage
+from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.output_parsers import PydanticOutputParser
 from agent import Agent
 from network import TrafficNetwork
 from payoff import create_payoff_func
@@ -25,136 +24,96 @@ class Route(BaseModel):
 # Set up a parser
 parser = PydanticOutputParser(pydantic_object=Route)
 
-# Store for chat histories
-chat_histories = {}
-
-def get_session_history(session_id: str) -> InMemoryChatMessageHistory:
-    if session_id not in chat_histories:
-        chat_histories[session_id] = InMemoryChatMessageHistory()
-    return chat_histories[session_id]
-
-def save_session_history(session_id: str):
-    history = chat_histories.get(session_id, None)
-    if history:
-        with open(f"{session_id}_history.txt", "w", encoding="utf-8") as file:
-            for message in history.messages:
-                if isinstance(message, HumanMessage):
-                    file.write(f"Human: {message.content}\n\n")
-                elif isinstance(message, SystemMessage):
-                    file.write(f"System: {message.content}\n\n")
-                elif isinstance(message, AIMessage):
-                    file.write(f"AI: {message.content}\n\n")
-
-
-# Custom parser
 def extract_json(message: AIMessage) -> List[dict]:
-    """Extracts JSON content from a string where JSON is embedded between ```json and ``` tags.
-
-    Parameters:
-        text (str): The text containing the JSON content.
-
-    Returns:
-        list: A list of extracted JSON strings.
-    """
+    """Extracts JSON content from a string where JSON is embedded between ```json and ``` tags."""
     text = message.content
-    # Define the regular expression pattern to match JSON blocks
     pattern = r"```json(.*?)```"
-
-    # Find all non-overlapping matches of the pattern in the string
     matches = re.findall(pattern, text, re.DOTALL)
-
-    # Return the list of matched JSON strings, stripping any leading or trailing whitespace
     try:
         return [json.loads(match.strip()) for match in matches]
     except Exception:
         raise ValueError(f"Failed to parse: {message}")
 
-from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
-from network import TrafficNetwork
-from langchain_core.tools import tool
+# def generate_few_shot_examples(num_agents, routes, network: TrafficNetwork):
+#     # Create the payoff function using the provided tool
+#     calculate_payoff = create_payoff_func(num_agents, network)
 
+#     examples = []
 
-def generate_few_shot_examples(num_agents, routes, network: TrafficNetwork):
-    # Create the payoff function using the provided tool
-    calculate_payoff = create_payoff_func(num_agents, network)
+#     # Example 1: Simple distribution, all agents on one route
+#     simple_dist = {route: num_agents if i == 0 else 0 for i, route in enumerate(routes)}
+#     chosen_route_1 = routes[0]
 
-    examples = []
+#     # Calculate the payoff using the tool
+#     payoff_1 = calculate_payoff(simple_dist, chosen_route_1)
 
-    # Example 1: Simple distribution, all agents on one route
-    simple_dist = {route: num_agents if i == 0 else 0 for i, route in enumerate(routes)}
-    chosen_route_1 = routes[0]
-    
-    # Calculate the payoff using the tool
-    payoff_1 = calculate_payoff(simple_dist, chosen_route_1)
-    
-    examples.append(
-        HumanMessage(
-            content="What is the payoff if I choose the route O-L-D and everyone else chooses O-R-D?",
-            name="example_user"
-        )
-    )
-    examples.append(
-        AIMessage(
-            content="",
-            name="example_assistant",
-            tool_calls=[
-                {"name": "calculate_payoff", "args": {"route_distribution": simple_dist, "chosen_route": chosen_route_1}, "id": "1"}
-            ]
-        )
-    )
-    examples.append(
-        ToolMessage(
-            content=str(payoff_1),
-            tool_call_id="1"
-        )
-    )
-    examples.append(
-        AIMessage(
-            content=f"The payoff for choosing the route O-L-D is {payoff_1} when all other agents choose O-R-D.",
-            name="example_assistant"
-        )
-    )
+#     examples.append(
+#         HumanMessage(
+#             content="What is the payoff if I choose the route O-L-D and everyone else chooses O-R-D?",
+#             name="example_user"
+#         )
+#     )
+#     examples.append(
+#         AIMessage(
+#             content="",
+#             name="example_assistant",
+#             tool_calls=[
+#                 {"name": "calculate_payoff", "args": {"route_distribution": simple_dist, "chosen_route": chosen_route_1}, "id": "1"}
+#             ]
+#         )
+#     )
+#     examples.append(
+#         ToolMessage(
+#             content=str(payoff_1),
+#             tool_call_id="1"
+#         )
+#     )
+#     examples.append(
+#         AIMessage(
+#             content=f"The payoff for choosing the route O-L-D is {payoff_1} when all other agents choose O-R-D.",
+#             name="example_assistant"
+#         )
+#     )
 
-    # Example 2: Split distribution, agents divided across routes
-    base_agents_per_route = num_agents // len(routes)
-    remainder_agents = num_agents % len(routes)
-    
-    # Distribute remainder agents across the first few routes
-    split_dist = {route: base_agents_per_route + (1 if i < remainder_agents else 0) for i, route in enumerate(routes)}
-    chosen_route_2 = routes[1]
-    
-    # Calculate the payoff using the tool
-    payoff_2 = calculate_payoff(split_dist, chosen_route_2)
-    
-    examples.append(
-        HumanMessage(
-            content=f"What is the payoff if I choose the route {chosen_route_2} and the agents are evenly distributed across all routes?",
-            name="example_user"
-        )
-    )
-    examples.append(
-        AIMessage(
-            content="",
-            name="example_assistant",
-            tool_calls=[
-                {"name": "calculate_payoff", "args": {"route_distribution": split_dist, "chosen_route": chosen_route_2}, "id": "2"}
-            ]
-        )
-    )
-    examples.append(
-        ToolMessage(
-            content=str(payoff_2),
-            tool_call_id="2"
-        )
-    )
-    examples.append(
-        AIMessage(
-            content=f"The payoff for choosing the route {chosen_route_2} is {payoff_2} when the agents are evenly distributed.",
-            name="example_assistant"
-        )
-    )
-    return examples
+#     # Example 2: Split distribution, agents divided across routes
+#     base_agents_per_route = num_agents // len(routes)
+#     remainder_agents = num_agents % len(routes)
 
+#     # Distribute remainder agents across the first few routes
+#     split_dist = {route: base_agents_per_route + (1 if i < remainder_agents else 0) for i, route in enumerate(routes)}
+#     chosen_route_2 = routes[1]
+
+#     # Calculate the payoff using the tool
+#     payoff_2 = calculate_payoff(split_dist, chosen_route_2)
+
+#     examples.append(
+#         HumanMessage(
+#             content=f"What is the payoff if I choose the route {chosen_route_2} and the agents are evenly distributed across all routes?",
+#             name="example_user"
+#         )
+#     )
+#     examples.append(
+#         AIMessage(
+#             content="",
+#             name="example_assistant",
+#             tool_calls=[
+#                 {"name": "calculate_payoff", "args": {"route_distribution": split_dist, "chosen_route": chosen_route_2}, "id": "2"}
+#             ]
+#         )
+#     )
+#     examples.append(
+#         ToolMessage(
+#             content=str(payoff_2),
+#             tool_call_id="2"
+#         )
+#     )
+#     examples.append(
+#         AIMessage(
+#             content=f"The payoff for choosing the route {chosen_route_2} is {payoff_2} when the agents are evenly distributed.",
+#             name="example_assistant"
+#         )
+#     )
+#     return examples
 
 # Define the system message generator
 def generate_system_message(num_rounds, num_agents, num_routes, str_routes, has_bridge, description):
@@ -179,7 +138,6 @@ Please note that the cost charged for segments O-L and R-D depends on the number
 In contrast, the cost charged for traveling on segments L-D and O-R is fixed at 210 and does not depend on the number of drivers choosing them.
 All the drivers make their route choices independently of one another and leave point O at the same time.
 """
-    
     if not has_bridge:
         example = f"""
 Example.
@@ -201,45 +159,73 @@ Your payoff for each round will be determined by subtracting your travel cost fr
 Your goal is to maximize your payoff (likewise minimize your cost).
 At the end of each round, you will be informed of the number of drivers who chose each route and your payoff for that round. 
 All {num_rounds} rounds have exactly the same structure. Use past tool usage as an example of how to correctly use the tool.
-When calling the tool, remember to provide both your chosen route AND the route distribution.
+When calling the tool, remember to provide both your chosen route AND the distribution of players on routes.
 """
-    
     return instructions
 
+def summarize_agent_history(agent_history):
+    """
+    Generates a summary for an agent that includes all previous rounds.
+
+    Args:
+    - agent_history (list): A list of dictionaries, one for each previous round, each containing:
+        - 'round_num' (int): The round number.
+        - 'agent_route' (str): The route chosen by the agent.
+        - 'agent_payoff' (float): The payoff received by the agent.
+        - 'route_distribution' (dict): A dict of {route: number of agents}.
+
+    Returns:
+    - str: A summary of all previous rounds for the agent.
+    """
+    summary_lines = []
+    for round_data in agent_history:
+        round_num = round_data['round_num']
+        agent_route = round_data['agent_route']
+        agent_payoff = round_data['agent_payoff']
+        route_distribution = round_data['route_distribution']
+
+        route_summary = "\n        ".join([f"{route}: {count} agents" for route, count in route_distribution.items()])
+        summary = (
+            f"Round {round_num}:\n"
+            f"- You chose route {agent_route} and received a payoff of {agent_payoff}.\n"
+            f"- The number of agents on each route was:\n        {route_summary}\n"
+        )
+        summary_lines.append(summary)
+    full_summary = "\n".join(summary_lines)
+    return full_summary
 
 # Update the prompt_route function to use the Agent class
-def prompt_route(agent, examples, num_rounds, num_routes, description, avail_routes, prev_routes, cost):
-    session_id = agent.thread_id
-    history = get_session_history(session_id)
-
-    # Prepare initial messages
-    if prev_routes is None and cost is None:
-        system_message = generate_system_message(num_rounds, agent.num_agents, num_routes, avail_routes, True, description)
-        messages = [SystemMessage(content=system_message)]
-        messages.extend(examples)
-    else:
-        message_content = f"Last round, the number of players on each route was: {prev_routes}\n" \
-                          f"Your payoff was {400 - cost}"
-        messages = [HumanMessage(content=message_content)]
-
+def prompt_route(agent, round_num, avail_routes, summary, system_message): # examples,
     format_instructions = parser.get_format_instructions()
-    messages.append(HumanMessage(content=f"The available routes are: {avail_routes}\nThink step-by-step before making your decision."))
-    messages.append(HumanMessage(content=format_instructions))
+    messages = []
+    messages.append(SystemMessage(system_message))
+    # messages.extend(examples)
 
-    # Record initial messages to history
-    for msg in messages:
-        history.add_message(msg)
+    # Construct the human message
+    human_message_content = ""
+    if summary is not None:
+        human_message_content += f"Summary of previous rounds:\n{summary}\n\n"
+    human_message_content += (
+        f"Welcome to round {round_num}. The available routes are: {avail_routes}\n"
+        f"{format_instructions}\n"
+        f"Think step-by-step before making your decision."
+    )
+    messages.append(HumanMessage(human_message_content))
 
     # Invoke the agent's workflow
     response = agent.call({"messages": messages})
+    llm_output = response["messages"]
+    answer = llm_output[-1].content
+
+    # Parse the output
+    try:
+        parsed_response = parser.parse(answer)
+    except Exception as e:
+        # Handle parsing errors
+        parsed_response = None
+        print(f"Error parsing LLM output for agent {agent.thread_id} in round {round_num}: {e}")
     
-    # Capture the AI response and save to history
-    ai_message = AIMessage(content=response["messages"][-1].content)
-    history.add_message(ai_message)
-
-    return response
-
-
+    return parsed_response, llm_output
 
 # Simulation function updated to use the TrafficNetwork class
 def run_simulation(has_bridge, num_rounds, num_agents, filename):
@@ -251,47 +237,115 @@ def run_simulation(has_bridge, num_rounds, num_agents, filename):
 
         agents = [Agent(thread_id=str(i), num_agents=num_agents, network=network) for i in range(num_agents)]
 
-        prev_costs = [{} for _ in range(num_agents)]
-        agent_routes = [0] * num_agents
+        agent_histories = [[] for _ in range(num_agents)]  # List of histories for each agent
+        agent_routes = [""] * num_agents
+        agent_llm_outputs = [[] for _ in range(num_agents)]  # To store full LLM outputs per agent
 
         str_routes = network.get_avail_routes()
         prev_routes = {route: 0 for route in str_routes}
 
+        description = network.describe_graph()
+        # examples = generate_few_shot_examples(num_agents, str_routes, network)
+
+        # Generate system message once
+        system_message = generate_system_message(
+            num_rounds,
+            num_agents,
+            len(str_routes),
+            str_routes,
+            has_bridge,
+            description
+        )
+
         for round_num in range(1, num_rounds + 1):
             print(f"Round {round_num}")
 
+            # Collect agent decisions
             for session_id, agent in enumerate(agents):
-                description = network.describe_graph()
-                examples = generate_few_shot_examples(num_agents, str_routes, network)
                 if round_num == 1:
-                    response = prompt_route(agent, examples, num_rounds, len(str_routes), description, str_routes, None, None)
+                    summary = None  # No previous rounds
                 else:
-                    response = prompt_route(agent, examples, num_rounds, len(str_routes), description, str_routes, prev_routes, prev_costs[session_id])
+                    # Generate the summary for the agent
+                    summary = summarize_agent_history(agent_histories[session_id])
 
-                # parsed_response = extract_json(response)
-                ai_message = response["messages"][-1].content
-                parsed_response = parser.parse(ai_message)
-                chosen_route = parsed_response.route
+                parsed_response, llm_output = prompt_route(
+                    agent,
+                    # examples,
+                    round_num,  # Pass the current round number
+                    str_routes,
+                    summary,
+                    system_message
+                )
+
+                if parsed_response is None:
+                    # Handle the case where parsing failed
+                    chosen_route = "Invalid"
+                else:
+                    chosen_route = parsed_response.route
+
                 agent_routes[session_id] = chosen_route
-                network.add_player_to_path(network.path_to_edges(chosen_route))
+                # Only add to path if the route is valid
+                if chosen_route in str_routes:
+                    network.add_player_to_path(network.path_to_edges(chosen_route))
+                else:
+                    print(f"Agent {session_id} provided an invalid route: {chosen_route}")
 
+                # Store the full LLM output after discarding the first 10 messages
+                round_llm_output = llm_output[2:]  # Discard the first 10 messages
+                round_messages_content = [msg.content for msg in round_llm_output]
+                agent_llm_outputs[session_id].append(round_messages_content)
+
+            # Update route counts
             prev_routes = {route: 0 for route in str_routes}
+            for route in agent_routes:
+                if route in str_routes:
+                    prev_routes[route] += 1
 
-            for session_id, agent in enumerate(agents):
+            # Calculate costs and update agent histories
+            for session_id in range(num_agents):
                 chosen_route = agent_routes[session_id]
-                cost = network.calculate_total_cost(network.path_to_edges(chosen_route))
-                writer.writerow([round_num, session_id, chosen_route, cost])
-                print(f"Agent {session_id} chose route {chosen_route} with cost {cost}")
-                prev_costs[session_id] = cost
-                prev_routes[chosen_route] += 1
+                if chosen_route in str_routes:
+                    cost = network.calculate_total_cost(network.path_to_edges(chosen_route))
+                    payoff = 400 - cost
+                    writer.writerow([round_num, session_id, chosen_route, cost])
+                    print(f"Agent {session_id} chose route {chosen_route} with cost {cost}")
+                else:
+                    cost = 400  # Max cost if invalid
+                    payoff = 0
+                    writer.writerow([round_num, session_id, "Invalid", cost])
+                    print(f"Agent {session_id} had invalid choice with cost {cost}")
 
+                # Update agent's history
+                agent_histories[session_id].append({
+                    'round_num': round_num,
+                    'agent_route': chosen_route,
+                    'agent_payoff': payoff,
+                    'route_distribution': prev_routes.copy()  # Copy to capture state at this round
+                })
             network.reset_player_counts()
         
-        # Save histories for each agent after simulation
-        for agent in agents:
-            save_session_history(agent.thread_id)
+        # After the simulation, save the required information per agent
+        for session_id in range(num_agents):
+            final_summary = summarize_agent_history(agent_histories[session_id])
+            with open(f"agent_{session_id}_history.txt", "w", encoding="utf-8") as f:
+                # Write the system message
+                f.write("System Message:\n")
+                f.write(system_message)
+                f.write("\n\n")
+                # Write the final summary
+                f.write("Final Summary of All Rounds:\n")
+                f.write(final_summary)
+                f.write("\n\n")
+                # Write all messages output by the LLM
+                f.write("LLM Outputs:\n")
+                for round_num, round_messages in enumerate(agent_llm_outputs[session_id], start=1):
+                    f.write(f"Round {round_num}:\n")
+                    for message in round_messages:
+                        f.write(message)
+                        f.write("\n\n")
+
+    print("Simulations completed and routes saved")
 
 # Running the simulation
 print("Starting simulations...")
-run_simulation(False, 3, 3, 'LR_10_18_no_bridge.csv')
-print("Simulations completed and routes saved")
+run_simulation(False, 5, 18, 'test.csv')
