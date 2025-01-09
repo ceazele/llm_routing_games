@@ -700,27 +700,14 @@ if __name__ == "__main__":
     #     raise
 
 
-    for _ in range(2):
-        config_path = f'configs/config5A.yaml'
-        with open(config_path, 'r') as file:
-            config = yaml.safe_load(file)
-            game_a_folder, game_b_folder, current_run_folder = setup_folders(config['simulation']['folder_name'])
-            run_simulation(config, current_run_folder=current_run_folder)
+    config_path = f'configs/config1A.yaml'
+    with open(config_path, 'r') as file:
+        config = yaml.safe_load(file)
+        game_a_folder, game_b_folder, current_run_folder = setup_folders(config['simulation']['folder_name'])
+        run_simulation(config, current_run_folder=current_run_folder)
 
-        # Run simulation for game_xB
-        config_path = f'configs/config5B.yaml'
-        with open(config_path, 'r') as file:
-            config = yaml.safe_load(file)
-            run_simulation(config, current_run_folder=current_run_folder)
-
-        config_path = f'configs/config6A.yaml'
-        with open(config_path, 'r') as file:
-            config = yaml.safe_load(file)
-            game_a_folder, game_b_folder, current_run_folder = setup_folders(config['simulation']['folder_name'])
-            run_simulation(config, current_run_folder=current_run_folder)
-
-        # Run simulation for game_xB
-        config_path = f'configs/config6B.yaml'
-        with open(config_path, 'r') as file:
-            config = yaml.safe_load(file)
-            run_simulation(config, current_run_folder=current_run_folder)
+    # # Run simulation for game_xB
+    # config_path = f'configs/config6B.yaml'
+    # with open(config_path, 'r') as file:
+    #     config = yaml.safe_load(file)
+    #     run_simulation(config, current_run_folder=current_run_folder)

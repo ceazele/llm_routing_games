@@ -66,6 +66,9 @@ def process_data(input_folder):
         no_bridge_regret = no_bridge_df.groupby('Round')['Regret'].mean()
         no_bridge_regret_list.append(no_bridge_regret)
 
+        no_bridge_routes = no_bridge_df.groupby(['Round', 'Route']).size().unstack(fill_value=0)
+
+
         # Read data for game B (With Bridge)
         with_bridge_df = pd.read_csv(game_B_path)
         valid_routes_with_bridge.update(with_bridge_df['Route'].unique())
@@ -113,6 +116,7 @@ def plot_routes_no_bridge(data, output_folder):
         .T
     )
 
+    plt.style.use("seaborn-v0_8")
     plt.figure(figsize=(12, 6))
     for route in data["valid_routes_no_bridge"]:
         if route in no_bridge_routes_mean.columns:
@@ -150,6 +154,7 @@ def plot_routes_with_bridge(data, output_folder):
         .T
     )
 
+    plt.style.use("seaborn-v0_8")
     plt.figure(figsize=(12, 6))
     for route in data["valid_routes_with_bridge"]:
         if route in with_bridge_routes_mean.columns:
@@ -173,6 +178,7 @@ def plot_payoff_comparison(data, output_folder):
     no_bridge_payoff_mean, no_bridge_payoff_se = compute_mean_se(data["no_bridge_payoff"])
     with_bridge_payoff_mean, with_bridge_payoff_se = compute_mean_se(data["with_bridge_payoff"])
 
+    plt.style.use("seaborn-v0_8")
     plt.figure(figsize=(12, 6))
     plt.plot(no_bridge_payoff_mean.index, no_bridge_payoff_mean, marker='o', label='No Bridge')
     plt.fill_between(
@@ -203,6 +209,7 @@ def plot_average_regret(data, output_folder):
     no_bridge_regret_mean, no_bridge_regret_se = compute_mean_se(data["no_bridge_regret"])
     with_bridge_regret_mean, with_bridge_regret_se = compute_mean_se(data["with_bridge_regret"])
 
+    plt.style.use("seaborn-v0_8")
     plt.figure(figsize=(12, 6))
     plt.plot(no_bridge_regret_mean.index, no_bridge_regret_mean, marker='o', label='No Bridge')
     plt.fill_between(
@@ -234,6 +241,7 @@ def plot_number_of_switches(data, output_folder):
     with_bridge_switches_mean, with_bridge_switches_se = compute_mean_se(data["with_bridge_switches"])
 
     # Create the plot
+    plt.style.use("seaborn-v0_8")
     plt.figure(figsize=(12, 6))
     plt.plot(no_bridge_switches_mean.index, no_bridge_switches_mean, marker='o', label='No Bridge')
     plt.fill_between(
@@ -264,7 +272,7 @@ def plot_number_of_switches(data, output_folder):
 
 
 
-input_folder = 'game_4'
+input_folder = 'game_6'
 
 data = process_data(input_folder)
 plot_routes_no_bridge(data, input_folder)

@@ -170,45 +170,9 @@ def plot_payoff_comparison(data, output_folder):
     plt.savefig(os.path.join(output_folder, 'payoff_comparison.png'))
     plt.close()
 
-def plot_number_of_switches(data, output_folder):
-    # Compute the mean and standard error of switches for both games
-    no_bridge_switches_mean, no_bridge_switches_se = compute_mean_se(data["no_bridge_switches"])
-    with_bridge_switches_mean, with_bridge_switches_se = compute_mean_se(data["with_bridge_switches"])
-
-    # Create the plot
-    plt.figure(figsize=(12, 6))
-    plt.plot(no_bridge_switches_mean.index, no_bridge_switches_mean, marker='o', label='No Bridge')
-    plt.fill_between(
-        no_bridge_switches_mean.index,
-        no_bridge_switches_mean - no_bridge_switches_se,
-        no_bridge_switches_mean + no_bridge_switches_se,
-        alpha=0.2
-    )
-
-    plt.plot(with_bridge_switches_mean.index, with_bridge_switches_mean, marker='o', label='With Bridge')
-    plt.fill_between(
-        with_bridge_switches_mean.index,
-        with_bridge_switches_mean - with_bridge_switches_se,
-        with_bridge_switches_mean + with_bridge_switches_se,
-        alpha=0.2
-    )
-
-    # Add labels, title, legend, and grid
-    plt.xlabel('Round Number')
-    plt.ylabel('Number of Switches')
-    plt.title('Number of Switches Between Rounds (No Bridge vs. With Bridge)')
-    plt.legend()
-    plt.grid(True)
-
-    # Save the plot
-    plt.savefig(os.path.join(output_folder, 'number_of_switches.png'))
-    plt.close()
-
-
 # Main program
-game_folder = 'game_4'
+game_folder = 'game_3'
 data = process_data(game_folder)
 plot_routes(data, game_folder, bridge=False)  # No bridge plot
 plot_routes(data, game_folder, bridge=True)   # With bridge plot
 plot_payoff_comparison(data, game_folder)
-plot_number_of_switches(data, game_folder)
