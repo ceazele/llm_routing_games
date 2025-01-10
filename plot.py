@@ -274,7 +274,7 @@ def plot_average_reward_trends(game_folders, output_folder, game):
     plt.style.use("seaborn-v0_8")
     plt.figure(figsize=(12, 6))
 
-    for game_folder in game_folders:
+    for i, game_folder in enumerate(game_folders, start=1):  # Track repetition number
         run_folders = sorted(glob.glob(os.path.join(game_folder, 'run *')))
         all_rewards = []
 
@@ -291,7 +291,12 @@ def plot_average_reward_trends(game_folders, output_folder, game):
 
         if all_rewards:
             rewards_mean, rewards_se = compute_mean_se(all_rewards)
-            plt.plot(rewards_mean.index, rewards_mean, marker='o', label=f'{game_folder}')
+            plt.plot(
+                rewards_mean.index,
+                rewards_mean,
+                marker='o',
+                label=f'Rep {i}'  # Use "Rep <number>" in the legend
+            )
             plt.fill_between(
                 rewards_mean.index,
                 rewards_mean - rewards_se,
@@ -307,11 +312,12 @@ def plot_average_reward_trends(game_folders, output_folder, game):
     plt.savefig(os.path.join(output_folder, f'average_reward_trends_game_{game}.png'))
     plt.close()
 
+
 def plot_average_regret_trends(game_folders, output_folder, game):
     plt.style.use("seaborn-v0_8")
     plt.figure(figsize=(12, 6))
 
-    for game_folder in game_folders:
+    for i, game_folder in enumerate(game_folders, start=1):  # Track repetition number
         run_folders = sorted(glob.glob(os.path.join(game_folder, 'run *')))
         all_regrets = []
 
@@ -328,7 +334,12 @@ def plot_average_regret_trends(game_folders, output_folder, game):
 
         if all_regrets:
             regrets_mean, regrets_se = compute_mean_se(all_regrets)
-            plt.plot(regrets_mean.index, regrets_mean, marker='o', label=f'{game_folder}')
+            plt.plot(
+                regrets_mean.index,
+                regrets_mean,
+                marker='o',
+                label=f'Rep {i}'  # Use "Rep <number>" in the legend
+            )
             plt.fill_between(
                 regrets_mean.index,
                 regrets_mean - regrets_se,
@@ -343,7 +354,7 @@ def plot_average_regret_trends(game_folders, output_folder, game):
     plt.grid(True)
     plt.savefig(os.path.join(output_folder, f'average_regret_trends_game_{game}.png'))
     plt.close()
-
+    
 
 def compute_average_route_choices(input_folder):
     """
