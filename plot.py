@@ -270,7 +270,8 @@ def plot_number_of_switches(data, output_folder):
     plt.savefig(os.path.join(output_folder, 'number_of_switches.png'))
     plt.close()
 
-def plot_average_reward_trends(game_folders, output_folder):
+def plot_average_reward_trends(game_folders, output_folder, game):
+    plt.style.use("seaborn-v0_8")
     plt.figure(figsize=(12, 6))
 
     for game_folder in game_folders:
@@ -279,7 +280,7 @@ def plot_average_reward_trends(game_folders, output_folder):
 
         for run_folder in run_folders:
             game_folder_name = os.path.basename(game_folder)
-            game_csv_path = os.path.join(run_folder, f'{game_folder_name}A', f'{game_folder_name}A.csv')
+            game_csv_path = os.path.join(run_folder, f'{game_folder_name}{game}', f'{game_folder_name}{game}.csv')
             if not os.path.exists(game_csv_path):
                 print(f"Data file not found in {run_folder}, skipping this run.")
                 continue
@@ -300,10 +301,47 @@ def plot_average_reward_trends(game_folders, output_folder):
 
     plt.xlabel('Round Number')
     plt.ylabel('Average Reward')
-    plt.title('Average Reward Trends Across Games')
+    plt.title(f'Average Reward Trends Across Game {game}')
     plt.legend()
     plt.grid(True)
-    plt.savefig(os.path.join(output_folder, 'average_reward_trends.png'))
+    plt.savefig(os.path.join(output_folder, f'average_reward_trends_game_{game}.png'))
+    plt.close()
+
+def plot_average_regret_trends(game_folders, output_folder, game):
+    plt.style.use("seaborn-v0_8")
+    plt.figure(figsize=(12, 6))
+
+    for game_folder in game_folders:
+        run_folders = sorted(glob.glob(os.path.join(game_folder, 'run *')))
+        all_regrets = []
+
+        for run_folder in run_folders:
+            game_folder_name = os.path.basename(game_folder)
+            game_csv_path = os.path.join(run_folder, f'{game_folder_name}{game}', f'{game_folder_name}{game}.csv')
+            if not os.path.exists(game_csv_path):
+                print(f"Data file not found in {run_folder}, skipping this run.")
+                continue
+
+            df = pd.read_csv(game_csv_path)
+            average_regrets = df.groupby('Round')['Regret'].mean()
+            all_regrets.append(average_regrets)
+
+        if all_regrets:
+            regrets_mean, regrets_se = compute_mean_se(all_regrets)
+            plt.plot(regrets_mean.index, regrets_mean, marker='o', label=f'{game_folder}')
+            plt.fill_between(
+                regrets_mean.index,
+                regrets_mean - regrets_se,
+                regrets_mean + regrets_se,
+                alpha=0.2
+            )
+
+    plt.xlabel('Round Number')
+    plt.ylabel('Average Regret')
+    plt.title(f'Average Regret Trends Across Game {game}')
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(os.path.join(output_folder, f'average_regret_trends_game_{game}.png'))
     plt.close()
 
 
@@ -385,9 +423,9 @@ def compute_average_route_choices(input_folder):
 
     return {"game_a": game_A_stats, "game_b": game_B_stats}
 
-for i in range (1,7):
-    input_folder = f"game_{i}"
-    results = compute_average_route_choices(input_folder)
+# for i in range (1,7):
+#     input_folder = f"game_{i}"
+#     results = compute_average_route_choices(input_folder)
 
 # data = process_data(input_folder)
 # plot_routes_no_bridge(data, input_folder)
@@ -395,3 +433,9 @@ for i in range (1,7):
 # plot_payoff_comparison(data, input_folder)
 # plot_average_regret(data, input_folder)
 # plot_number_of_switches(data, input_folder)
+    
+plot_average_reward_trends(['game_1', 'game_2', 'game_3', 'game_4', 'game_5', 'game_6'], '.', 'A')
+plot_average_reward_trends(['game_1', 'game_2', 'game_3', 'game_4', 'game_5', 'game_6'], '.', 'B')
+
+plot_average_regret_trends(['game_1', 'game_2', 'game_3', 'game_4', 'game_5', 'game_6'], '.', 'A')
+plot_average_regret_trends(['game_1', 'game_2', 'game_3', 'game_4', 'game_5', 'game_6'], '.', 'B')
