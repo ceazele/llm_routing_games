@@ -270,6 +270,43 @@ def plot_number_of_switches(data, output_folder):
     plt.savefig(os.path.join(output_folder, 'number_of_switches.png'))
     plt.close()
 
+def plot_average_reward_trends(game_folders, output_folder):
+    plt.figure(figsize=(12, 6))
+
+    for game_folder in game_folders:
+        run_folders = sorted(glob.glob(os.path.join(game_folder, 'run *')))
+        all_rewards = []
+
+        for run_folder in run_folders:
+            game_folder_name = os.path.basename(game_folder)
+            game_csv_path = os.path.join(run_folder, f'{game_folder_name}A', f'{game_folder_name}A.csv')
+            if not os.path.exists(game_csv_path):
+                print(f"Data file not found in {run_folder}, skipping this run.")
+                continue
+
+            df = pd.read_csv(game_csv_path)
+            average_rewards = df.groupby('Round')['Payoff'].mean()
+            all_rewards.append(average_rewards)
+
+        if all_rewards:
+            rewards_mean, rewards_se = compute_mean_se(all_rewards)
+            plt.plot(rewards_mean.index, rewards_mean, marker='o', label=f'{game_folder}')
+            plt.fill_between(
+                rewards_mean.index,
+                rewards_mean - rewards_se,
+                rewards_mean + rewards_se,
+                alpha=0.2
+            )
+
+    plt.xlabel('Round Number')
+    plt.ylabel('Average Reward')
+    plt.title('Average Reward Trends Across Games')
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(os.path.join(output_folder, 'average_reward_trends.png'))
+    plt.close()
+
+
 def compute_average_route_choices(input_folder):
     """
     Compute the average and standard deviation of route choices across all rounds
