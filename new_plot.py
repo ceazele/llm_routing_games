@@ -270,13 +270,91 @@ def plot_number_of_switches(data, output_folder):
     plt.savefig(os.path.join(output_folder, 'number_of_switches.png'))
     plt.close()
 
+def compute_average_route_choices(input_folder):
+    """
+    Compute the average and standard deviation of route choices across all rounds
+    and trials for both Game A and Game B.
 
+    Args:
+        input_folder (str): Path to the input folder containing `run *` subdirectories.
 
-input_folder = 'game_6'
+    Returns:
+        dict: Containing dataframes for Game A and Game B statistics.
+    """
 
-data = process_data(input_folder)
-plot_routes_no_bridge(data, input_folder)
-plot_routes_with_bridge(data, input_folder)
-plot_payoff_comparison(data, input_folder)
-plot_average_regret(data, input_folder)
-plot_number_of_switches(data, input_folder)
+    # Infer game name from the input folder name (e.g., "game_2" -> "game_2A.csv", "game_2B.csv")
+    game_name = os.path.basename(input_folder)
+    game_A_filename = f"{game_name}A.csv"
+    game_B_filename = f"{game_name}B.csv"
+
+    # Locate the paths for game_A.csv and game_B.csv
+    game_A_paths = glob.glob(os.path.join(input_folder, "run *", game_name + "A", game_A_filename))
+    game_B_paths = glob.glob(os.path.join(input_folder, "run *", game_name + "B", game_B_filename))
+
+    if not game_A_paths or not game_B_paths:
+        raise FileNotFoundError(f"Could not find {game_A_filename} or {game_B_filename} in the expected folder structure.")
+
+    # Initialize lists to hold route choice data for each run
+    game_A_route_choices_list = []
+    game_B_route_choices_list = []
+
+    # Process all runs for Game A
+    for path in game_A_paths:
+        game_A_df = pd.read_csv(path)
+        # Group by 'Round' and 'Route', then count players choosing each route
+        game_A_route_choices = game_A_df.groupby(['Round', 'Route']).size().unstack(fill_value=0)
+        game_A_route_choices_list.append(game_A_route_choices)
+
+    # Process all runs for Game B
+    for path in game_B_paths:
+        game_B_df = pd.read_csv(path)
+        # Group by 'Round' and 'Route', then count players choosing each route
+        game_B_route_choices = game_B_df.groupby(['Round', 'Route']).size().unstack(fill_value=0)
+        game_B_route_choices_list.append(game_B_route_choices)
+
+    # Combine data across all runs
+    game_A_combined = pd.concat(game_A_route_choices_list).groupby(level=0).mean()
+    game_A_avg = game_A_combined.mean(axis=0)
+    game_A_std = game_A_combined.std(axis=0, ddof=1)
+
+    game_B_combined = pd.concat(game_B_route_choices_list).groupby(level=0).mean()
+    game_B_avg = game_B_combined.mean(axis=0)
+    game_B_std = game_B_combined.std(axis=0, ddof=1)
+
+    # Prepare DataFrames for Game A and Game B statistics
+    game_A_stats = pd.DataFrame({
+        "Route": game_A_avg.index,
+        "Average Players": game_A_avg.values,
+        "Standard Deviation": game_A_std.values
+    })
+
+    game_B_stats = pd.DataFrame({
+        "Route": game_B_avg.index,
+        "Average Players": game_B_avg.values,
+        "Standard Deviation": game_B_std.values
+    })
+
+    # Save the statistics to CSV files
+    output_folder = os.path.join(input_folder, "results")
+    os.makedirs(output_folder, exist_ok=True)
+
+    game_A_csv_path = os.path.join(output_folder, f"{game_name}_a_route_stats.csv")
+    game_B_csv_path = os.path.join(output_folder, f"{game_name}_b_route_stats.csv")
+
+    game_A_stats.to_csv(game_A_csv_path, index=False)
+    game_B_stats.to_csv(game_B_csv_path, index=False)
+
+    print(f"Results saved to:\n  {game_A_csv_path}\n  {game_B_csv_path}")
+
+    return {"game_a": game_A_stats, "game_b": game_B_stats}
+
+for i in range (1,7):
+    input_folder = f"game_{i}"
+    results = compute_average_route_choices(input_folder)
+
+# data = process_data(input_folder)
+# plot_routes_no_bridge(data, input_folder)
+# plot_routes_with_bridge(data, input_folder)
+# plot_payoff_comparison(data, input_folder)
+# plot_average_regret(data, input_folder)
+# plot_number_of_switches(data, input_folder)
