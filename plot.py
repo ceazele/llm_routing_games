@@ -1,9 +1,9 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+from scipy.stats import kendalltau
 import os
 import numpy as np
 import glob
-
 
 # Function to count switches between rounds
 def count_switches(df):
@@ -116,7 +116,7 @@ def plot_routes_no_bridge(data, output_folder):
         .T
     )
 
-    plt.style.use("seaborn-v0_8")
+    plt.style.use("seaborn-v0_8-whitegrid")
     plt.figure(figsize=(12, 6))
     for route in data["valid_routes_no_bridge"]:
         if route in no_bridge_routes_mean.columns:
@@ -127,9 +127,9 @@ def plot_routes_no_bridge(data, output_folder):
             plt.plot(rounds, mean_values, marker='o', label=route)
             plt.fill_between(rounds, mean_values - se_values, mean_values + se_values, alpha=0.2)
 
-    plt.xlabel('Round Number')
-    plt.ylabel('Number of Subjects')
-    plt.title('Number of Subjects per Route (No Bridge)')
+    plt.xlabel('Round')
+    plt.ylabel('Mean Number of Subjects')
+    # plt.title('Number of Subjects per Route (No Bridge)')
     plt.legend()
     plt.grid(True)
     plt.savefig(os.path.join(output_folder, 'no_bridge_routes.png'))
@@ -154,7 +154,7 @@ def plot_routes_with_bridge(data, output_folder):
         .T
     )
 
-    plt.style.use("seaborn-v0_8")
+    plt.style.use("seaborn-v0_8-whitegrid")
     plt.figure(figsize=(12, 6))
     for route in data["valid_routes_with_bridge"]:
         if route in with_bridge_routes_mean.columns:
@@ -165,9 +165,9 @@ def plot_routes_with_bridge(data, output_folder):
             plt.plot(rounds, mean_values, marker='o', label=route)
             plt.fill_between(rounds, mean_values - se_values, mean_values + se_values, alpha=0.2)
 
-    plt.xlabel('Round Number')
-    plt.ylabel('Number of Subjects')
-    plt.title('Number of Subjects per Route (With Bridge)')
+    plt.xlabel('Round')
+    plt.ylabel('Mean Number of Subjects')
+    # plt.title('Number of Subjects per Route (With Bridge)')
     plt.legend()
     plt.grid(True)
     plt.savefig(os.path.join(output_folder, 'with_bridge_routes.png'))
@@ -178,9 +178,9 @@ def plot_payoff_comparison(data, output_folder):
     no_bridge_payoff_mean, no_bridge_payoff_se = compute_mean_se(data["no_bridge_payoff"])
     with_bridge_payoff_mean, with_bridge_payoff_se = compute_mean_se(data["with_bridge_payoff"])
 
-    plt.style.use("seaborn-v0_8")
+    plt.style.use("seaborn-v0_8-whitegrid")
     plt.figure(figsize=(12, 6))
-    plt.plot(no_bridge_payoff_mean.index, no_bridge_payoff_mean, marker='o', label='No Bridge')
+    plt.plot(no_bridge_payoff_mean.index, no_bridge_payoff_mean, marker='o', label='Game A')
     plt.fill_between(
         no_bridge_payoff_mean.index,
         no_bridge_payoff_mean - no_bridge_payoff_se,
@@ -188,7 +188,7 @@ def plot_payoff_comparison(data, output_folder):
         alpha=0.2
     )
 
-    plt.plot(with_bridge_payoff_mean.index, with_bridge_payoff_mean, marker='o', label='With Bridge')
+    plt.plot(with_bridge_payoff_mean.index, with_bridge_payoff_mean, marker='o', label='Game B')
     plt.fill_between(
         with_bridge_payoff_mean.index,
         with_bridge_payoff_mean - with_bridge_payoff_se,
@@ -196,9 +196,9 @@ def plot_payoff_comparison(data, output_folder):
         alpha=0.2
     )
 
-    plt.xlabel('Round Number')
+    plt.xlabel('Round')
     plt.ylabel('Mean Payoff')
-    plt.title('Mean Payoff Comparison Between Experiments')
+    # plt.title('Mean Payoff Comparison Between Experiments')
     plt.legend()
     plt.grid(True)
     plt.savefig(os.path.join(output_folder, 'payoff_comparison.png'))
@@ -209,9 +209,9 @@ def plot_average_regret(data, output_folder):
     no_bridge_regret_mean, no_bridge_regret_se = compute_mean_se(data["no_bridge_regret"])
     with_bridge_regret_mean, with_bridge_regret_se = compute_mean_se(data["with_bridge_regret"])
 
-    plt.style.use("seaborn-v0_8")
+    plt.style.use("seaborn-v0_8-whitegrid")
     plt.figure(figsize=(12, 6))
-    plt.plot(no_bridge_regret_mean.index, no_bridge_regret_mean, marker='o', label='No Bridge')
+    plt.plot(no_bridge_regret_mean.index, no_bridge_regret_mean, marker='o', label='Game A')
     plt.fill_between(
         no_bridge_regret_mean.index,
         no_bridge_regret_mean - no_bridge_regret_se,
@@ -219,7 +219,7 @@ def plot_average_regret(data, output_folder):
         alpha=0.2
     )
 
-    plt.plot(with_bridge_regret_mean.index, with_bridge_regret_mean, marker='o', label='With Bridge')
+    plt.plot(with_bridge_regret_mean.index, with_bridge_regret_mean, marker='o', label='Game B')
     plt.fill_between(
         with_bridge_regret_mean.index,
         with_bridge_regret_mean - with_bridge_regret_se,
@@ -227,9 +227,9 @@ def plot_average_regret(data, output_folder):
         alpha=0.2
     )
 
-    plt.xlabel('Round Number')
-    plt.ylabel('Average Regret')
-    plt.title('Average Regret Comparison Between Experiments')
+    plt.xlabel('Round')
+    plt.ylabel('Mean Regret')
+    # plt.title('Average Regret Comparison Between Experiments')
     plt.legend()
     plt.grid(True)
     plt.savefig(os.path.join(output_folder, 'average_regret_comparison.png'))
@@ -241,9 +241,9 @@ def plot_number_of_switches(data, output_folder):
     with_bridge_switches_mean, with_bridge_switches_se = compute_mean_se(data["with_bridge_switches"])
 
     # Create the plot
-    plt.style.use("seaborn-v0_8")
+    plt.style.use("seaborn-v0_8-whitegrid")
     plt.figure(figsize=(12, 6))
-    plt.plot(no_bridge_switches_mean.index, no_bridge_switches_mean, marker='o', label='No Bridge')
+    plt.plot(no_bridge_switches_mean.index, no_bridge_switches_mean, marker='o', label='Game A')
     plt.fill_between(
         no_bridge_switches_mean.index,
         no_bridge_switches_mean - no_bridge_switches_se,
@@ -251,7 +251,7 @@ def plot_number_of_switches(data, output_folder):
         alpha=0.2
     )
 
-    plt.plot(with_bridge_switches_mean.index, with_bridge_switches_mean, marker='o', label='With Bridge')
+    plt.plot(with_bridge_switches_mean.index, with_bridge_switches_mean, marker='o', label='Game B')
     plt.fill_between(
         with_bridge_switches_mean.index,
         with_bridge_switches_mean - with_bridge_switches_se,
@@ -260,9 +260,9 @@ def plot_number_of_switches(data, output_folder):
     )
 
     # Add labels, title, legend, and grid
-    plt.xlabel('Round Number')
-    plt.ylabel('Number of Switches')
-    plt.title('Number of Switches Between Rounds (No Bridge vs. With Bridge)')
+    plt.xlabel('Round')
+    plt.ylabel('Mean Number of Switches')
+    # plt.title('Number of Switches Between Rounds (No Bridge vs. With Bridge)')
     plt.legend()
     plt.grid(True)
 
@@ -271,16 +271,32 @@ def plot_number_of_switches(data, output_folder):
     plt.close()
 
 def plot_average_reward_trends(game_folders, output_folder, game):
-    plt.style.use("seaborn-v0_8")
-    plt.figure(figsize=(12, 6))
+    """
+    Plots the average reward trends for the specified game (A or B) across multiple folders.
 
-    for i, game_folder in enumerate(game_folders, start=1):  # Track repetition number
+    - Uses a white-grid background (seaborn-v0_8-whitegrid).
+    - Places legend below the plot, arranged in one horizontal line (ncol=6).
+    - Forces y-axis from 0 to 120.
+    - Removes left, right, and top borders.
+    - Adds x-axis padding from 0.8 to 40.2.
+    - Enforces x-ticks at 1, 5, 10, 15, 20, 25, 30, 35, and 40.
+    """
+    plt.style.use("seaborn-v0_8-whitegrid")
+    plt.rcParams["axes.facecolor"] = "white"
+    plt.figure(figsize=(12, 6), facecolor="white")
+
+    labels = ["F-APO", "S-APO", "F-AR", "S-AR", "F-AP", "S-AP"]
+
+    for i, game_folder in enumerate(game_folders, start=1):
         run_folders = sorted(glob.glob(os.path.join(game_folder, 'run *')))
         all_rewards = []
 
         for run_folder in run_folders:
             game_folder_name = os.path.basename(game_folder)
-            game_csv_path = os.path.join(run_folder, f'{game_folder_name}{game}', f'{game_folder_name}{game}.csv')
+            game_csv_path = os.path.join(
+                run_folder, f'{game_folder_name}{game}', f'{game_folder_name}{game}.csv'
+            )
+            
             if not os.path.exists(game_csv_path):
                 print(f"Data file not found in {run_folder}, skipping this run.")
                 continue
@@ -294,8 +310,8 @@ def plot_average_reward_trends(game_folders, output_folder, game):
             plt.plot(
                 rewards_mean.index,
                 rewards_mean,
-                marker='o',
-                label=f'Rep {i}'  # Use "Rep <number>" in the legend
+                # marker='o',
+                label=labels[i - 1]
             )
             plt.fill_between(
                 rewards_mean.index,
@@ -304,26 +320,64 @@ def plot_average_reward_trends(game_folders, output_folder, game):
                 alpha=0.2
             )
 
-    plt.xlabel('Round Number')
-    plt.ylabel('Average Reward')
-    plt.title(f'Average Reward Trends Across Game {game}')
-    plt.legend()
+    plt.xlabel('Round')
+    plt.ylabel('Mean Payoff')
+
+    # Y-axis range
+    plt.ylim(0, 120)
+
+    # Remove top, right, and left borders (spines)
+    ax = plt.gca()
+    for spine in ["top", "right", "left"]:
+        ax.spines[spine].set_visible(False)
+
+    # Add padding on the x-axis and custom tick locations
+    ax.set_xlim(0, 41)
+    ax.set_xticks([1, 5, 10, 15, 20, 25, 30, 35, 40])
+
+    # Legend below the plot, arranged horizontally
+    plt.legend(
+        loc='upper center',
+        bbox_to_anchor=(0.5, -0.15),
+        ncol=6
+    )
+
     plt.grid(True)
-    plt.savefig(os.path.join(output_folder, f'average_reward_trends_game_{game}.png'))
+    plt.savefig(
+        os.path.join(output_folder, f'average_reward_trends_game_{game}.png'),
+        facecolor='white',
+        bbox_inches='tight'
+    )
     plt.close()
 
 
 def plot_average_regret_trends(game_folders, output_folder, game):
-    plt.style.use("seaborn-v0_8")
-    plt.figure(figsize=(12, 6))
+    """
+    Plots the average regret trends for the specified game (A or B) across multiple folders.
 
-    for i, game_folder in enumerate(game_folders, start=1):  # Track repetition number
+    - Uses a white-grid background (seaborn-v0_8-whitegrid).
+    - Places legend below the plot, arranged in one horizontal line (ncol=6).
+    - Forces y-axis from 0 to 175.
+    - Removes left, right, and top borders.
+    - Adds x-axis padding from 0.8 to 40.2.
+    - Enforces x-ticks at 1, 5, 10, 15, 20, 25, 30, 35, and 40.
+    """
+    plt.style.use("seaborn-v0_8-whitegrid")
+    plt.rcParams["axes.facecolor"] = "white"
+    plt.figure(figsize=(12, 6), facecolor="white")
+
+    labels = ["F-APO", "S-APO", "F-AR", "S-AR", "F-AP", "S-AP"]
+
+    for i, game_folder in enumerate(game_folders, start=1):
         run_folders = sorted(glob.glob(os.path.join(game_folder, 'run *')))
         all_regrets = []
 
         for run_folder in run_folders:
             game_folder_name = os.path.basename(game_folder)
-            game_csv_path = os.path.join(run_folder, f'{game_folder_name}{game}', f'{game_folder_name}{game}.csv')
+            game_csv_path = os.path.join(
+                run_folder, f'{game_folder_name}{game}', f'{game_folder_name}{game}.csv'
+            )
+            
             if not os.path.exists(game_csv_path):
                 print(f"Data file not found in {run_folder}, skipping this run.")
                 continue
@@ -337,8 +391,8 @@ def plot_average_regret_trends(game_folders, output_folder, game):
             plt.plot(
                 regrets_mean.index,
                 regrets_mean,
-                marker='o',
-                label=f'Rep {i}'  # Use "Rep <number>" in the legend
+                # marker='o',
+                label=labels[i - 1]
             )
             plt.fill_between(
                 regrets_mean.index,
@@ -347,14 +401,35 @@ def plot_average_regret_trends(game_folders, output_folder, game):
                 alpha=0.2
             )
 
-    plt.xlabel('Round Number')
-    plt.ylabel('Average Regret')
-    plt.title(f'Average Regret Trends Across Game {game}')
-    plt.legend()
+    plt.xlabel('Round')
+    plt.ylabel('Mean Regret')
+
+    # Y-axis range
+    plt.ylim(0, 175)
+
+    # Remove top, right, and left borders (spines)
+    ax = plt.gca()
+    for spine in ["top", "right", "left"]:
+        ax.spines[spine].set_visible(False)
+
+    # Add padding on the x-axis and custom tick locations
+    ax.set_xlim(0, 41)
+    ax.set_xticks([1, 5, 10, 15, 20, 25, 30, 35, 40])
+
+    # Legend below the plot, arranged horizontally
+    plt.legend(
+        loc='upper center',
+        bbox_to_anchor=(0.5, -0.15),
+        ncol=6
+    )
+
     plt.grid(True)
-    plt.savefig(os.path.join(output_folder, f'average_regret_trends_game_{game}.png'))
-    plt.close()
-    
+    plt.savefig(
+        os.path.join(output_folder, f'average_regret_trends_game_{game}.png'),
+        facecolor='white',
+        bbox_inches='tight'
+    )
+    plt.close()    
 
 def compute_average_route_choices(input_folder):
     """
@@ -434,16 +509,94 @@ def compute_average_route_choices(input_folder):
 
     return {"game_a": game_A_stats, "game_b": game_B_stats}
 
+
+# Define expected route frequencies
+EXPECTED_FREQUENCIES = {
+    "game_A": {"O-L-D": 9, "O-R-D": 9},
+    "game_B": {"O-L-D": 0, "O-R-D": 0, "O-L-R-D": 18}
+}
+
+def compute_kendalls_tau(input_folder):
+    """
+    Computes Kendall's Tau correlation between round number and deviation scores for each run.
+    
+    Args:
+        input_folder (str): Path to the folder containing all game_x subfolders.
+    
+    Returns:
+        dict: Mapping of each run to its Kendall's Tau correlation and p-value.
+    """
+    # Identify all run folders
+    run_folders = sorted(glob.glob(os.path.join(input_folder, 'run *')))
+    tau_results = {}
+
+    for run_folder in run_folders:
+        game_folder_name = os.path.basename(input_folder)
+        
+        # Paths for Game A and Game B
+        game_A_path = os.path.join(run_folder, f'{game_folder_name}A', f'{game_folder_name}A.csv')
+        game_B_path = os.path.join(run_folder, f'{game_folder_name}B', f'{game_folder_name}B.csv')
+
+        # Process each game separately
+        for game_label, game_path in [("game_A", game_A_path), ("game_B", game_B_path)]:
+            if not os.path.exists(game_path):
+                print(f"Skipping missing file: {game_path}")
+                continue
+            
+            # Load the data
+            df = pd.read_csv(game_path)
+            
+            # Get unique routes present in this game
+            observed_routes = df["Route"].unique()
+            
+            # Extract expected counts for this game
+            expected_counts = EXPECTED_FREQUENCIES[game_label]
+
+            # Initialize lists to store per-round data
+            round_numbers = []
+            deviation_scores = []
+
+            # Compute deviation scores for each round
+            for round_num in sorted(df["Round"].unique()):
+                round_numbers.append(round_num)
+
+                # Count observed frequencies for this round
+                observed_counts = df[df["Round"] == round_num]["Route"].value_counts().to_dict()
+
+                # Compute deviation score as sum of absolute differences
+                deviation_score = sum(
+                    abs(observed_counts.get(route, 0) - expected_counts.get(route, 0))
+                    for route in expected_counts
+                )
+                deviation_scores.append(deviation_score)
+
+            # Compute Kendall’s Tau if there is sufficient data
+            if len(round_numbers) > 1:
+                tau, p_value = kendalltau(round_numbers, deviation_scores)
+                tau_results[f"{os.path.basename(run_folder)}_{game_label}"] = (tau, p_value)
+
+    return tau_results
+
+# Example Usage
+input_folder = "game_2"  # Change this to your actual folder path
+tau_results = compute_kendalls_tau(input_folder)
+
+# Print results
+for run, (tau, p) in tau_results.items():
+    print(f"{run}: Kendall's Tau = {tau:.4f}, p-value = {p:.4f}")
+
+
+
+
 # for i in range (1,7):
 #     input_folder = f"game_{i}"
-#     results = compute_average_route_choices(input_folder)
-
-# data = process_data(input_folder)
-# plot_routes_no_bridge(data, input_folder)
-# plot_routes_with_bridge(data, input_folder)
-# plot_payoff_comparison(data, input_folder)
-# plot_average_regret(data, input_folder)
-# plot_number_of_switches(data, input_folder)
+#     # results = compute_average_route_choices(input_folder)
+#     data = process_data(input_folder)
+#     plot_routes_no_bridge(data, input_folder)
+#     plot_routes_with_bridge(data, input_folder)
+#     plot_payoff_comparison(data, input_folder)
+#     plot_average_regret(data, input_folder)
+#     plot_number_of_switches(data, input_folder)
     
 plot_average_reward_trends(['game_1', 'game_2', 'game_3', 'game_4', 'game_5', 'game_6'], '.', 'A')
 plot_average_reward_trends(['game_1', 'game_2', 'game_3', 'game_4', 'game_5', 'game_6'], '.', 'B')
