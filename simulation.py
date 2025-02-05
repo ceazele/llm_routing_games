@@ -674,7 +674,7 @@ def run_simulation(config, current_run_folder=None):
     print(f"Simulation complete.")
 
 if __name__ == "__main__":
-    try:
+    for j in range(0,2):
         for i in range(10, 12):
             # Initialize the run folder for this game
             current_run_folder = None
@@ -692,22 +692,25 @@ if __name__ == "__main__":
                 config = yaml.safe_load(file)
                 run_simulation(config, current_run_folder=current_run_folder)
 
-    except FileNotFoundError:
-        print(f"Configuration file not found: {config_path}")
-        raise
-    except yaml.YAMLError as e:
-        print(f"Error parsing YAML file: {e}")
-        raise
+    # Initialize the run folder for this game
+    current_run_folder = None
 
+    # Run simulation for game_xA
+    config_path = f'configs/config12A.yaml'
+    with open(config_path, 'r') as file:
+        config = yaml.safe_load(file)
+        game_a_folder, game_b_folder, current_run_folder = setup_folders(config['simulation']['folder_name'])
+        run_simulation(config, current_run_folder=current_run_folder)
 
-    # config_path = f'configs/config1A.yaml'
-    # with open(config_path, 'r') as file:
-    #     config = yaml.safe_load(file)
-    #     game_a_folder, game_b_folder, current_run_folder = setup_folders(config['simulation']['folder_name'])
-    #     run_simulation(config, current_run_folder=current_run_folder)
+    # Run simulation for game_xB
+    config_path = f'configs/config12B.yaml'
+    with open(config_path, 'r') as file:
+        config = yaml.safe_load(file)
+        run_simulation(config, current_run_folder=current_run_folder)
 
-    # # Run simulation for game_xB
-    # config_path = f'configs/config6B.yaml'
-    # with open(config_path, 'r') as file:
-    #     config = yaml.safe_load(file)
-    #     run_simulation(config, current_run_folder=current_run_folder)
+    # Run simulation for game_xA
+    config_path = f'configs/config11B.yaml'
+    with open(config_path, 'r') as file:
+        config = yaml.safe_load(file)
+        game_a_folder, game_b_folder, current_run_folder = setup_folders(config['simulation']['folder_name'])
+        run_simulation(config, current_run_folder=current_run_folder)
