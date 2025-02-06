@@ -674,42 +674,11 @@ def run_simulation(config, current_run_folder=None):
     print(f"Simulation complete.")
 
 if __name__ == "__main__":
-    for j in range(0,2):
-        for i in range(10, 12):
-            # Initialize the run folder for this game
-            current_run_folder = None
-
-            # Run simulation for game_xA
-            config_path = f'configs/config{i+1}A.yaml'
-            with open(config_path, 'r') as file:
-                config = yaml.safe_load(file)
-                game_a_folder, game_b_folder, current_run_folder = setup_folders(config['simulation']['folder_name'])
-                run_simulation(config, current_run_folder=current_run_folder)
-
-            # Run simulation for game_xB
-            config_path = f'configs/config{i+1}B.yaml'
-            with open(config_path, 'r') as file:
-                config = yaml.safe_load(file)
-                run_simulation(config, current_run_folder=current_run_folder)
-
     # Initialize the run folder for this game
     current_run_folder = None
 
     # Run simulation for game_xA
-    config_path = f'configs/config12A.yaml'
-    with open(config_path, 'r') as file:
-        config = yaml.safe_load(file)
-        game_a_folder, game_b_folder, current_run_folder = setup_folders(config['simulation']['folder_name'])
-        run_simulation(config, current_run_folder=current_run_folder)
-
-    # Run simulation for game_xB
     config_path = f'configs/config12B.yaml'
-    with open(config_path, 'r') as file:
-        config = yaml.safe_load(file)
-        run_simulation(config, current_run_folder=current_run_folder)
-
-    # Run simulation for game_xA
-    config_path = f'configs/config11B.yaml'
     with open(config_path, 'r') as file:
         config = yaml.safe_load(file)
         game_a_folder, game_b_folder, current_run_folder = setup_folders(config['simulation']['folder_name'])

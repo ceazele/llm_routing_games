@@ -3,7 +3,7 @@ import pandas as pd
 import glob
 
 # Specify the input folder
-input_folder = 'summarized runs'  # Replace with your input folder path
+input_folder = 'game_12'  # Replace with your input folder path
 
 # Define valid routes for both cases
 valid_routes_no_bridge = ['O-L-D', 'O-R-D']
@@ -17,8 +17,8 @@ run_folders = sorted(glob.glob(os.path.join(input_folder, 'run *')))
 
 for run_folder in run_folders:
     # Paths to game_1A.csv and game_1B.csv
-    game_1A_path = os.path.join(run_folder, 'game_1A', 'game_1A.csv')
-    game_1B_path = os.path.join(run_folder, 'game_1B', 'game_1B.csv')
+    game_1A_path = os.path.join(run_folder, f'{input_folder}A', f'{input_folder}A.csv')
+    game_1B_path = os.path.join(run_folder, f'{input_folder}B', f'{input_folder}B.csv')
     
     # Validate No Bridge data
     if os.path.exists(game_1A_path):

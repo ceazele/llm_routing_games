@@ -1,6 +1,6 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-from scipy.stats import kendalltau
+# from scipy.stats import kendalltau
 import os
 import numpy as np
 import glob
@@ -285,7 +285,7 @@ def plot_average_reward_trends(game_folders, output_folder, game):
     plt.rcParams["axes.facecolor"] = "white"
     plt.figure(figsize=(12, 6), facecolor="white")
 
-    labels = ["F-APO", "S-APO", "F-AR", "S-AR", "F-AP", "S-AP"]
+    labels = ["F-APO", "S-APO", "F-AR", "S-AR", "F-AP", "S-AP", "F-ARO", "S-ARO"]
 
     for i, game_folder in enumerate(game_folders, start=1):
         run_folders = sorted(glob.glob(os.path.join(game_folder, 'run *')))
@@ -366,7 +366,7 @@ def plot_average_regret_trends(game_folders, output_folder, game):
     plt.rcParams["axes.facecolor"] = "white"
     plt.figure(figsize=(12, 6), facecolor="white")
 
-    labels = ["F-APO", "S-APO", "F-AR", "S-AR", "F-AP", "S-AP"]
+    labels = ["F-APO", "S-APO", "F-AR", "S-AR", "F-AP", "S-AP", "F-ARO", "S-ARO"]
 
     for i, game_folder in enumerate(game_folders, start=1):
         run_folders = sorted(glob.glob(os.path.join(game_folder, 'run *')))
@@ -577,13 +577,13 @@ def compute_kendalls_tau(input_folder):
 
     return tau_results
 
-# Example Usage
-input_folder = "game_2"  # Change this to your actual folder path
-tau_results = compute_kendalls_tau(input_folder)
+# # Example Usage
+# input_folder = "game_2"  # Change this to your actual folder path
+# tau_results = compute_kendalls_tau(input_folder)
 
-# Print results
-for run, (tau, p) in tau_results.items():
-    print(f"{run}: Kendall's Tau = {tau:.4f}, p-value = {p:.4f}")
+# # Print results
+# for run, (tau, p) in tau_results.items():
+#     print(f"{run}: Kendall's Tau = {tau:.4f}, p-value = {p:.4f}")
 
 
 
@@ -598,8 +598,8 @@ for run, (tau, p) in tau_results.items():
 #     plot_average_regret(data, input_folder)
 #     plot_number_of_switches(data, input_folder)
     
-plot_average_reward_trends(['game_1', 'game_2', 'game_3', 'game_4', 'game_5', 'game_6'], '.', 'A')
-plot_average_reward_trends(['game_1', 'game_2', 'game_3', 'game_4', 'game_5', 'game_6'], '.', 'B')
+plot_average_reward_trends(['game_1', 'game_2', 'game_3', 'game_4', 'game_5', 'game_6', 'game_11', 'game_12'], '.', 'A')
+plot_average_reward_trends(['game_1', 'game_2', 'game_3', 'game_4', 'game_5', 'game_6', 'game_11', 'game_12'], '.', 'B')
 
-plot_average_regret_trends(['game_1', 'game_2', 'game_3', 'game_4', 'game_5', 'game_6'], '.', 'A')
-plot_average_regret_trends(['game_1', 'game_2', 'game_3', 'game_4', 'game_5', 'game_6'], '.', 'B')
+plot_average_regret_trends(['game_1', 'game_2', 'game_3', 'game_4', 'game_5', 'game_6', 'game_11', 'game_12'], '.', 'A')
+plot_average_regret_trends(['game_1', 'game_2', 'game_3', 'game_4', 'game_5', 'game_6', 'game_11', 'game_12'], '.', 'B')
