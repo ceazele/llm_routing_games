@@ -5,11 +5,11 @@ from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.chat_history import BaseChatMessageHistory, InMemoryChatMessageHistory
-from operator import itemgetter
 from langchain_core.runnables import RunnablePassthrough
 from langchain_openai import ChatOpenAI
-from network import TrafficNetwork
 import yaml
+from operator import itemgetter
+from network import TrafficNetwork
 import os
 import csv
 from regret import compute_regret_for_agents
@@ -678,7 +678,7 @@ if __name__ == "__main__":
     current_run_folder = None
 
     # Run simulation for game_xA
-    config_path = f'configs/config12B.yaml'
+    config_path = f'configs/config1A.yaml'
     with open(config_path, 'r') as file:
         config = yaml.safe_load(file)
         game_a_folder, game_b_folder, current_run_folder = setup_folders(config['simulation']['folder_name'])

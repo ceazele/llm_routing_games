@@ -1,26 +1,35 @@
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.stats import kendalltau, wilcoxon
-import numpy as np
-import pandas as pd
-import glob
 import os
-
-# Define expected route frequencies
-EXPECTED_FREQUENCIES = {
-    "game_A": {"O-L-D": 9, "O-R-D": 9},
-    "game_B": {"O-L-D": 0, "O-R-D": 0, "O-L-R-D": 18}
-}
+import glob
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
+from matplotlib.colors import TwoSlopeNorm, to_hex
 
 # Define game labels
 GAME_LABELS = {
-    "game_1": "F-APO",
-    "game_2": "S-APO",
-    "game_3": "F-AR",
-    "game_4": "S-AR",
-    "game_5": "F-AP",
-    "game_6": "S-AP"
+    "game_1": "F-PE",
+    "game_2": "S-PE",
+    "game_3": "F-RO",
+    "game_4": "S-RO",
+    "game_5": "F-PO",
+    "game_6": "S-PO",
+    "game_11": "F-RE",
+    "game_12": "S-RE"
 }
+
+# Define a custom color gradient
+CUSTOM_CMAP = plt.get_cmap("Greys")  # Red to Blue reversed
+
+# Define whether higher or lower values should be blue
+BLUE_FOR_HIGHER = {"route": True, "payoff": False, "regret": False, "switches": False}
+
+# Order for output printing
+PRINT_ORDER = ["F-PE", "F-RE", "F-PO", "F-RO", "S-PE", "S-RE", "S-PO", "S-RO"]
+
 
 
 def compute_mean_metric(input_folder, metric="Regret", ordering=None, game="B"):
@@ -37,12 +46,14 @@ def compute_mean_metric(input_folder, metric="Regret", ordering=None, game="B"):
         dict: Mapping of condition names (e.g., "F-APO") to mean metric values.
     """
     game_labels = {
-        "game_1": "F-APO",
-        "game_2": "S-APO",
-        "game_3": "F-AR",
-        "game_4": "S-AR",
-        "game_5": "F-AP",
-        "game_6": "S-AP"
+    "game_1": "F-PO",
+    "game_2": "S-PO",
+    "game_3": "F-R",
+    "game_4": "S-R",
+    "game_5": "F-P",
+    "game_6": "S-P",
+    "game_11": "F-RO",
+    "game_12": "S-RO"
     }
 
     mean_metrics = {}
@@ -426,16 +437,208 @@ def plot_bar_with_error_bars(game_tau_values, ordering, game_type, output_folder
     # Show plot
     plt.show()
 
+# def compute_route_statistics(game_folders, base_path):
+#     """
+#     Computes the mean and standard deviation of the number of agents choosing each route 
+#     per round within each specified game_x folder (representation), separately for Game A and Game B.
+
+#     Args:
+#         game_folders (list): List of specific game_x folder names to process (e.g., ["game_1", "game_2"]).
+#         base_path (str): Path to the directory containing all game_x subfolders.
+
+#     Returns:
+#         pd.DataFrame: Aggregated table with mean and standard deviation for each route per representation.
+#     """
+#     all_results = []
+
+#     # Loop through only the specified game_x folders
+#     for game_folder in game_folders:
+#         game_path = os.path.join(base_path, game_folder)
+
+#         if not os.path.isdir(game_path):  # Ensure it's a valid directory
+#             print(f"Skipping invalid folder: {game_path}")
+#             continue
+
+#         # Loop through all run_y folders inside game_x
+#         run_folders = sorted(os.listdir(game_path))
+#         run_paths = [os.path.join(game_path, run_folder) for run_folder in run_folders if os.path.isdir(os.path.join(game_path, run_folder))]
+
+#         # Initialize data storage for each representation
+#         for game_variant in ["A", "B"]:
+#             all_round_counts = []
+
+#             for run_path in run_paths:
+#                 game_variant_path = os.path.join(run_path, f"{game_folder}{game_variant}")
+
+#                 if not os.path.isdir(game_variant_path):  # Ensure it's a directory
+#                     continue
+
+#                 # Construct CSV file path
+#                 csv_file = os.path.join(game_variant_path, f"{game_folder}{game_variant}.csv")
+
+#                 if not os.path.exists(csv_file):
+#                     print(f"Skipping missing file: {csv_file}")
+#                     continue
+
+#                 # Read CSV
+#                 df = pd.read_csv(csv_file)
+
+#                 # Group by Round and count occurrences of each route
+#                 round_counts = df.groupby("Round")["Route"].value_counts().unstack(fill_value=0)
+#                 all_round_counts.append(round_counts)
+
+#             if all_round_counts:
+#                 # Concatenate all rounds from different runs
+#                 full_round_counts = pd.concat(all_round_counts)
+
+#                 # Compute mean and std per route for this representation
+#                 for route in full_round_counts.columns:
+#                     mean_agents = full_round_counts[route].mean()
+#                     std_dev = full_round_counts[route].std()
+
+#                     all_results.append({
+#                         "Game": f"Game {game_variant.upper()}",
+#                         "Representation": game_folder,  # Use folder name as representation identifier
+#                         "Route": route,
+#                         "Mean Agents": mean_agents,
+#                         "Std Dev": std_dev
+#                     })
+
+#     # Convert to DataFrame for easy readability
+#     summary_df = pd.DataFrame(all_results)
+#     return summary_df
+
+
+def compute_statistics_with_colors(game_folders, base_path, statistic_type):
+    """
+    Computes the mean and standard error (SE) of the selected statistic (route choice, payoff, regret, or switch count)
+    across all rounds and trials for Game A and Game B within the given representations.
+
+    Also computes a color hex code for each statistic, normalized within Game A and Game B separately.
+
+    Args:
+        game_folders (list): List of specific game_x folder names (e.g., ["game_1", "game_2"]).
+        base_path (str): Path to the directory containing all game_x subfolders.
+        statistic_type (str): The statistic to compute ("route", "payoff", "regret", "switches").
+
+    Returns:
+        dict: Dictionary containing computed statistics and their corresponding hex color codes.
+    """
+
+    all_stats = {"Game A": {}, "Game B": {}}  # Store statistics separately for Game A and Game B
+
+    for game_folder in game_folders:
+        game_path = os.path.join(base_path, game_folder)
+
+        if not os.path.isdir(game_path):  # Ensure it's a valid directory
+            print(f"Skipping invalid folder: {game_path}")
+            continue
+
+        game_label = GAME_LABELS.get(game_folder, game_folder)  # Convert to correct label
+
+        for game_variant in ["A", "B"]:
+            stat_values = []  # Store statistics for this representation (across runs)
+
+            run_folders = sorted(glob.glob(os.path.join(game_path, "run *")))
+
+            for run_folder in run_folders:
+                game_variant_path = os.path.join(run_folder, f"{game_folder}{game_variant}")
+                csv_file = os.path.join(game_variant_path, f"{game_folder}{game_variant}.csv")
+
+                if not os.path.exists(csv_file):
+                    print(f"Skipping missing file: {csv_file}")
+                    continue
+
+                df = pd.read_csv(csv_file)
+
+                # Compute statistic per agent over 40 rounds
+                if statistic_type == "route":
+                    if game_variant == "A":
+                        # Get counts for both O-L-D and O-R-D
+                        old_counts = df[df["Route"] == "O-L-D"].groupby("Round")["Agent"].count()
+                        ord_counts = df[df["Route"] == "O-R-D"].groupby("Round")["Agent"].count()
+
+                        # Compute the smaller count for each round, then average over all rounds
+                        min_route_counts = np.minimum(old_counts, ord_counts)
+                        avg_route_choice = min_route_counts.mean()  # Average across rounds
+
+                    else:  # Game B
+                        route_counts = df[df["Route"] == "O-L-R-D"].groupby("Round")["Agent"].count()
+                        avg_route_choice = route_counts.mean()  # Average across rounds
+                    
+                    stat_values.append(avg_route_choice)
+
+                elif statistic_type == "payoff":
+                    avg_payoff = df.groupby("Agent")["Payoff"].mean().mean()
+                    stat_values.append(avg_payoff)
+
+                elif statistic_type == "regret":
+                    avg_regret = df.groupby("Agent")["Regret"].mean().mean()
+                    stat_values.append(avg_regret)
+
+                elif statistic_type == "switches":
+                    # Count switches per agent across 40 rounds
+                    switches = df.groupby("Agent")["Route"].apply(lambda x: (x != x.shift()).sum() - 1)
+                    avg_switches = switches.mean()
+                    stat_values.append(avg_switches)
+
+            if stat_values:
+                # Compute final mean and standard error across 5 runs
+                final_mean = np.mean(stat_values)
+                final_std = np.std(stat_values, ddof=1)
+                final_se = final_std / np.sqrt(len(stat_values))  # Standard error computation
+                all_stats[f"Game {game_variant}"][game_label] = (final_mean, final_se)
+
+    # Normalize and compute colors for each statistic
+    game_a_norm = None  # Store normalization from Game A to apply its inverse to Game B for Payoff
+    for game in ["Game A", "Game B"]:
+        if not all_stats[game]:  # Skip if no data
+            continue
+        
+        stat_means = np.array([v[0] for v in all_stats[game].values()])  # Extract means
+        min_val, max_val = min(stat_means), max(stat_means)
+        midpoint = (min_val + max_val) / 2
+
+        # Use TwoSlopeNorm to correctly anchor mid-value
+        norm = TwoSlopeNorm(vmin=min_val, vcenter=midpoint, vmax=max_val)
+
+        if statistic_type == "payoff" and game == "Game A":
+            game_a_norm = norm  # Store Game A normalization for inversion in Game B
+
+        for rep, (mean, se) in all_stats[game].items():
+            # Correct color mapping logic
+            if statistic_type == "payoff" and game == "Game B" and game_a_norm is not None:
+                color_value = 1 - game_a_norm(mean)  # Invert gradient for Game B
+            else:
+                color_value = norm(mean) if BLUE_FOR_HIGHER[statistic_type] else 1 - norm(mean)
+
+            color = to_hex(CUSTOM_CMAP(color_value))
+            all_stats[game][rep] = (mean, se, color)
+
+    # Print results in an easy-to-copy format with correct labels
+    print("\n================== Statistics and Colors ==================\n")
+    for game in ["Game A", "Game B"]:
+        print(f"\n{game} ({statistic_type.upper()})\n")
+        
+        # Print in the specific order defined in PRINT_ORDER
+        for rep in PRINT_ORDER:
+            if rep in all_stats[game]:
+                mean, se, color = all_stats[game][rep]
+                print(f"{rep}: Mean = {mean:.2f}, SE = {se:.2f}, Color = {color}")
+
+    return all_stats
 
 
 
-# # Example Usage
-input_folder = "."  # Change this to your actual folder path
 
-# # Define ordering explicitly
-ordering = ["F-APO", "F-AP", "S-APO", "S-AP", "F-AR", "S-AR"]
-# ordering = ["F-APO", "F-AP", "F-AR", "S-APO", "S-AP", "S-AR"]
-# expected_frequencies = EXPECTED_FREQUENCIES
+
+# # # Example Usage
+# input_folder = "."  # Change this to your actual folder path
+
+# # # Define ordering explicitly
+# ordering = ["F-PO", "F-P", "F-RO", "S-PO", "S-P", "S-RO", "F-R", "S-R"]
+# # ordering = ["F-APO", "F-AP", "F-AR", "S-APO", "S-AP", "S-AR"]
+# # expected_frequencies = EXPECTED_FREQUENCIES
 
 # # Compute mean Kendall’s Tau per game representation
 # game_tau_values = compute_kendalls_tau(input_folder, ordering)
@@ -460,8 +663,26 @@ ordering = ["F-APO", "F-AP", "S-APO", "S-AP", "F-AR", "S-AR"]
 #     plot_kendall_tau_matrix(tau_matrix, ordering, metric="Kendall's Tau", output_path=f"{game_type}_tau_matrix.png")
 
 
-# Generate and plot for different metrics and for both Game A and Game B
-for game in ["A", "B"]:
-    for metric in ["Regret", "Payoff", "Switches"]:
-        metric_matrix = create_metric_difference_matrix(input_folder, metric, ordering, game)
-        plot_metric_difference_matrix(metric_matrix, metric, ordering, game, output_path=f"{metric.lower()}_matrix.png")
+# # Generate and plot for different metrics and for both Game A and Game B
+# for game in ["A", "B"]:
+#     for metric in ["Regret", "Payoff", "Switches"]:
+#         metric_matrix = create_metric_difference_matrix(input_folder, metric, ordering, game)
+#         plot_metric_difference_matrix(metric_matrix, metric, ordering, game, output_path=f"{metric.lower()}_matrix.png")
+
+
+# # Example usage
+# game_folders = ["game_1", "game_2", "game_3", "game_4", "game_5", "game_6", "game_11", "game_12"]
+# base_path = "."
+# result_df = compute_route_statistics(game_folders, base_path)
+# print(result_df)
+
+# Define the game representations
+game_folders = ["game_1", "game_2", "game_3", "game_4", "game_5", "game_6", "game_11", "game_12"]
+base_path = "."
+
+# Compute statistics for each metric
+compute_statistics_with_colors(game_folders, base_path, "route")
+compute_statistics_with_colors(game_folders, base_path, "payoff")
+compute_statistics_with_colors(game_folders, base_path, "regret")
+compute_statistics_with_colors(game_folders, base_path, "switches")
+

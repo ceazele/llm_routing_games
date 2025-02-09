@@ -1,6 +1,6 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-# from scipy.stats import kendalltau
+from scipy.stats import kendalltau
 import os
 import numpy as np
 import glob
@@ -285,7 +285,7 @@ def plot_average_reward_trends(game_folders, output_folder, game):
     plt.rcParams["axes.facecolor"] = "white"
     plt.figure(figsize=(12, 6), facecolor="white")
 
-    labels = ["F-APO", "S-APO", "F-AR", "S-AR", "F-AP", "S-AP", "F-ARO", "S-ARO"]
+    labels = ["F-PO", "S-PO", "F-R", "S-R", "F-P", "S-P", "F-RO", "S-RO"]
 
     for i, game_folder in enumerate(game_folders, start=1):
         run_folders = sorted(glob.glob(os.path.join(game_folder, 'run *')))
@@ -366,7 +366,7 @@ def plot_average_regret_trends(game_folders, output_folder, game):
     plt.rcParams["axes.facecolor"] = "white"
     plt.figure(figsize=(12, 6), facecolor="white")
 
-    labels = ["F-APO", "S-APO", "F-AR", "S-AR", "F-AP", "S-AP", "F-ARO", "S-ARO"]
+    labels = ["F-PO", "S-PO", "F-R", "S-R", "F-P", "S-P", "F-RO", "S-RO"]
 
     for i, game_folder in enumerate(game_folders, start=1):
         run_folders = sorted(glob.glob(os.path.join(game_folder, 'run *')))
@@ -430,6 +430,80 @@ def plot_average_regret_trends(game_folders, output_folder, game):
         bbox_inches='tight'
     )
     plt.close()    
+
+def plot_average_switch_trends(game_folders, output_folder, game):
+    """
+    Plots the average number of switches per round for the specified game (A or B) across multiple folders.
+
+    - Uses a white-grid background (seaborn-v0_8-whitegrid).
+    - Places legend below the plot, arranged in one horizontal line (ncol=6).
+    - Enforces x-ticks at 1, 5, 10, 15, 20, 25, 30, 35, and 40.
+    """
+    plt.style.use("seaborn-v0_8-whitegrid")
+    plt.rcParams["axes.facecolor"] = "white"
+    plt.figure(figsize=(12, 6), facecolor="white")
+
+    labels = ["F-PO", "S-PO", "F-R", "S-R", "F-P", "S-P", "F-RO", "S-RO"]
+
+    for i, game_folder in enumerate(game_folders, start=1):
+        run_folders = sorted(glob.glob(os.path.join(game_folder, 'run *')))
+        all_switch_counts = []
+
+        for run_folder in run_folders:
+            game_folder_name = os.path.basename(game_folder)
+            game_csv_path = os.path.join(
+                run_folder, f'{game_folder_name}{game}', f'{game_folder_name}{game}.csv'
+            )
+
+            if not os.path.exists(game_csv_path):
+                print(f"Data file not found in {run_folder}, skipping this run.")
+                continue
+
+            df = pd.read_csv(game_csv_path)
+            switch_counts = count_switches(df)
+            all_switch_counts.append(switch_counts)
+
+        if all_switch_counts:
+            switch_mean, switch_se = compute_mean_se(all_switch_counts)
+            plt.plot(
+                switch_mean.index,
+                switch_mean,
+                label=labels[i - 1]
+            )
+            plt.fill_between(
+                switch_mean.index,
+                switch_mean - switch_se,
+                switch_mean + switch_se,
+                alpha=0.2
+            )
+
+    plt.xlabel('Round')
+    plt.ylabel('Mean Number of Switches')
+
+    # Remove top, right, and left borders (spines)
+    ax = plt.gca()
+    for spine in ["top", "right", "left"]:
+        ax.spines[spine].set_visible(False)
+
+    # Add padding on the x-axis and custom tick locations
+    ax.set_xlim(0, 41)
+    ax.set_xticks([1, 5, 10, 15, 20, 25, 30, 35, 40])
+
+    # Legend below the plot, arranged horizontally
+    plt.legend(
+        loc='upper center',
+        bbox_to_anchor=(0.5, -0.15),
+        ncol=6
+    )
+
+    plt.grid(True)
+    plt.savefig(
+        os.path.join(output_folder, f'average_switch_trends_game_{game}.png'),
+        facecolor='white',
+        bbox_inches='tight'
+    )
+    plt.close()
+
 
 def compute_average_route_choices(input_folder):
     """
@@ -588,7 +662,7 @@ def compute_kendalls_tau(input_folder):
 
 
 
-# for i in range (1,7):
+# for i in range (11,13):
 #     input_folder = f"game_{i}"
 #     # results = compute_average_route_choices(input_folder)
 #     data = process_data(input_folder)
@@ -602,4 +676,7 @@ plot_average_reward_trends(['game_1', 'game_2', 'game_3', 'game_4', 'game_5', 'g
 plot_average_reward_trends(['game_1', 'game_2', 'game_3', 'game_4', 'game_5', 'game_6', 'game_11', 'game_12'], '.', 'B')
 
 plot_average_regret_trends(['game_1', 'game_2', 'game_3', 'game_4', 'game_5', 'game_6', 'game_11', 'game_12'], '.', 'A')
+plot_average_regret_trends(['game_1', 'game_2', 'game_3', 'game_4', 'game_5', 'game_6', 'game_11', 'game_12'], '.', 'B')
+
+plot(['game_1', 'game_2', 'game_3', 'game_4', 'game_5', 'game_6', 'game_11', 'game_12'], '.', 'A')
 plot_average_regret_trends(['game_1', 'game_2', 'game_3', 'game_4', 'game_5', 'game_6', 'game_11', 'game_12'], '.', 'B')
