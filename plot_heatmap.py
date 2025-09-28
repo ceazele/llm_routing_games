@@ -1,13 +1,19 @@
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.stats import kendalltau, wilcoxon
-import os
-import glob
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
+from matplotlib.colors import Normalize, to_hex
 import matplotlib.colors as mcolors
-from matplotlib.colors import TwoSlopeNorm, to_hex
+from matplotlib.cm import ScalarMappable
+import numpy as np
+import pandas as pd
+import glob
+import os
+
+# Define expected route frequencies
+EXPECTED_FREQUENCIES = {
+    "game_A": {"O-L-D": 9, "O-R-D": 9},
+    "game_B": {"O-L-D": 0, "O-R-D": 0, "O-L-R-D": 18}
+}
 
 # Define game labels
 GAME_LABELS = {
@@ -21,14 +27,11 @@ GAME_LABELS = {
     "game_12": "S-RE"
 }
 
-# Define a custom color gradient
-CUSTOM_CMAP = plt.get_cmap("Greys")  # Red to Blue reversed
+# Define a slightly darker gradient from red to blue
+CUSTOM_CMAP = plt.get_cmap("Blues")
 
 # Define whether higher or lower values should be blue
-BLUE_FOR_HIGHER = {"route": True, "payoff": False, "regret": False, "switches": False}
-
-# Order for output printing
-PRINT_ORDER = ["F-PE", "F-RE", "F-PO", "F-RO", "S-PE", "S-RE", "S-PO", "S-RO"]
+BLUE_FOR_HIGHER = {"route": False, "payoff": True, "regret": True, "switches": True}
 
 
 
@@ -417,11 +420,12 @@ def plot_bar_with_error_bars(game_tau_values, ordering, game_type, output_folder
 
     # Create bar plot with error bars
     plt.figure(figsize=(10, 6))
+    plt.rcParams.update({'font.size': 20})
     plt.bar(ordering, means, yerr=std_devs, capsize=5, color='cornflowerblue', alpha=0.7, edgecolor='black')
 
     # Add labels and title
     plt.axhline(y=0, color='black', linewidth=1)  # Ensure zero-line is visible
-    plt.ylabel("Mean Correlation Coefficent")
+    plt.ylabel("Mean $\\tau$")
     plt.xlabel("Representation")
     # plt.title(f"Kendall’s Tau Correlations for {game_type.replace('_', ' ').title()}")
     
@@ -509,6 +513,32 @@ def plot_bar_with_error_bars(game_tau_values, ordering, game_type, output_folder
 #     return summary_df
 
 
+import os
+import glob
+import pandas as pd
+import numpy as np
+
+# Function to count agent switches per run
+def count_switches(df):
+    """
+    Counts the number of times each agent switches routes across rounds.
+    """
+    agents = df['Agent'].unique()
+    switch_counts = {agent: 0 for agent in agents}
+    
+    rounds = sorted(df['Round'].unique())
+    for round_num in rounds[1:]:
+        prev_round = df[df['Round'] == round_num - 1].set_index('Agent')['Route']
+        current_round = df[df['Round'] == round_num].set_index('Agent')['Route']
+        
+        for agent in agents:
+            if agent in prev_round and agent in current_round and prev_round[agent] != current_round[agent]:
+                switch_counts[agent] += 1
+
+    return switch_counts
+
+PRINT_ORDER = ["F-PE", "F-RE", "F-PO", "F-RO", "S-PE", "S-RE", "S-PO", "S-RO"]
+
 def compute_statistics_with_colors(game_folders, base_path, statistic_type):
     """
     Computes the mean and standard error (SE) of the selected statistic (route choice, payoff, regret, or switch count)
@@ -590,7 +620,6 @@ def compute_statistics_with_colors(game_folders, base_path, statistic_type):
                 all_stats[f"Game {game_variant}"][game_label] = (final_mean, final_se)
 
     # Normalize and compute colors for each statistic
-    game_a_norm = None  # Store normalization from Game A to apply its inverse to Game B for Payoff
     for game in ["Game A", "Game B"]:
         if not all_stats[game]:  # Skip if no data
             continue
@@ -600,19 +629,16 @@ def compute_statistics_with_colors(game_folders, base_path, statistic_type):
         midpoint = (min_val + max_val) / 2
 
         # Use TwoSlopeNorm to correctly anchor mid-value
-        norm = TwoSlopeNorm(vmin=min_val, vcenter=midpoint, vmax=max_val)
-
-        if statistic_type == "payoff" and game == "Game A":
-            game_a_norm = norm  # Store Game A normalization for inversion in Game B
+        norm = mcolors.TwoSlopeNorm(vmin=min_val, vcenter=midpoint, vmax=max_val)
 
         for rep, (mean, se) in all_stats[game].items():
             # Correct color mapping logic
-            if statistic_type == "payoff" and game == "Game B" and game_a_norm is not None:
-                color_value = 1 - game_a_norm(mean)  # Invert gradient for Game B
+            if BLUE_FOR_HIGHER[statistic_type]:
+                color_value = norm(mean)  # Higher values → blue
             else:
-                color_value = norm(mean) if BLUE_FOR_HIGHER[statistic_type] else 1 - norm(mean)
+                color_value = 1 - norm(mean)  # Lower values → blue
 
-            color = to_hex(CUSTOM_CMAP(color_value))
+            color = mcolors.to_hex(CUSTOM_CMAP(color_value))
             all_stats[game][rep] = (mean, se, color)
 
     # Print results in an easy-to-copy format with correct labels
@@ -632,20 +658,20 @@ def compute_statistics_with_colors(game_folders, base_path, statistic_type):
 
 
 
-# # # Example Usage
-# input_folder = "."  # Change this to your actual folder path
+# # Example Usage
+input_folder = "."  # Change this to your actual folder path
 
-# # # Define ordering explicitly
-# ordering = ["F-PO", "F-P", "F-RO", "S-PO", "S-P", "S-RO", "F-R", "S-R"]
-# # ordering = ["F-APO", "F-AP", "F-AR", "S-APO", "S-AP", "S-AR"]
-# # expected_frequencies = EXPECTED_FREQUENCIES
+# # Define ordering explicitly
+ordering = ["F-PE", "F-PO", "F-RE", "F-RO", "S-PE", "S-PO", "S-RE", "S-RO"]
+# ordering = ["F-APO", "F-AP", "F-AR", "S-APO", "S-AP", "S-AR"]
+# expected_frequencies = EXPECTED_FREQUENCIES
 
-# # Compute mean Kendall’s Tau per game representation
-# game_tau_values = compute_kendalls_tau(input_folder, ordering)
+# Compute mean Kendall’s Tau per game representation
+game_tau_values = compute_kendalls_tau(input_folder, ordering)
 
-# # Example usage:
-# plot_bar_with_error_bars(game_tau_values, ordering, "game_A", input_folder)
-# plot_bar_with_error_bars(game_tau_values, ordering, "game_B", input_folder)
+# Example usage:
+plot_bar_with_error_bars(game_tau_values, ordering, "game_A", input_folder)
+plot_bar_with_error_bars(game_tau_values, ordering, "game_B", input_folder)
 
 
 # # Compute Wilcoxon signed-rank p-value matrices for both game A and game B

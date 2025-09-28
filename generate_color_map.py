@@ -18,7 +18,7 @@ def generate_coolwarm_colormap():
     ax.set_facecolor("none")  # Transparent axis background
     
     # Display the colormap
-    ax.imshow(gradient, aspect='auto', cmap='Greys', extent=[0, width, 0, height])
+    ax.imshow(gradient, aspect='auto', cmap='Blues', extent=[0, width, 0, height])
     ax.set_xticks([])
     ax.set_yticks([])
     ax.set_frame_on(False)
