@@ -18,10 +18,10 @@ from collections import Counter
 
 # Set your API keys and environment variables
 os.environ["LANGCHAIN_TRACING_V2"] = "false" # change to true when langsmith credits are back
-os.environ["LANGCHAIN_API_KEY"] = "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"
+os.environ["LANGCHAIN_API_KEY"] = ""
 os.environ["LANGCAHIN_ENDPOINT"] = "https://api.smith.langchain.com"
-os.environ["LANGCHAIN_PROJECT"] = "bluesky"
-os.environ["OPENAI_API_KEY"] = "sk-proj-2YIRzXSkGvD5mXF5KSwST3BlbkFJ32aEm9aV3nrL6gFGCr97"
+os.environ["LANGCHAIN_PROJECT"] = ""
+os.environ["OPENAI_API_KEY"] = ""
 
 # Initialize the model
 model = ChatOpenAI(model="gpt-4o-2024-08-06", temperature=1)
