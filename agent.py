@@ -15,10 +15,10 @@ import os
 
 
 os.environ["LANGCHAIN_TRACING_V2"] = "true"
-os.environ["LANGCHAIN_API_KEY"] = "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"
+os.environ["LANGCHAIN_API_KEY"] = ""
 os.environ["LANGCAHIN_ENDPOINT"] = "https://api.smith.langchain.com"
-os.environ["LANGCHAIN_PROJECT"] = "bluesky"
-os.environ["OPENAI_API_KEY"] = "sk-proj-2YIRzXSkGvD5mXF5KSwST3BlbkFJ32aEm9aV3nrL6gFGCr97"
+os.environ["LANGCHAIN_PROJECT"] = ""
+os.environ["OPENAI_API_KEY"] = ""
 
 class AgentState(TypedDict):
     messages: Annotated[Sequence[BaseMessage], operator.add]
